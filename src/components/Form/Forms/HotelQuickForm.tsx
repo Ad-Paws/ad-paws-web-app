@@ -52,7 +52,11 @@ const HotelQuickForm = () => {
   };
 
   return (
-    <Form form={form} onSubmit={onSubmit}>
+    <Form
+      form={form}
+      onSubmit={onSubmit}
+      className="flex flex-col justify-between h-full"
+    >
       <FieldSet>
         <FormField
           name="dogId"

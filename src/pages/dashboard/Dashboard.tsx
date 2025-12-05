@@ -1,5 +1,6 @@
 import AdPawsCard from "@/components/AdPawsCard";
 import InsightCard from "@/components/Dashboard/InsightCard";
+import DayCareQuickForm from "@/components/Form/Forms/DayCareQuickForm";
 import HotelQuickForm from "@/components/Form/Forms/HotelQuickForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getClockTime, getFormattedDate, getTimeOfDay } from "@/lib/utils";
@@ -73,10 +74,10 @@ export default function Dashboard() {
             className="col-span-3 landscape:xl:col-span-3 order-4 landscape:lg:col-span-4"
           />
           <AdPawsCard className="col-span-3 row-span-4 order-1 lg:col-span-4 overflow-hidden landscape:lg:order-1 landscape:xl:order-5">
-            <div className="w-full min-w-0">
+            <div className="w-full min-w-0 h-full flex flex-col">
               <p className="text-lg font-bold">Check-In rápido</p>
-              <div className="mt-6">
-                <Tabs defaultValue="hotel" className="w-full">
+              <div className="mt-6 h-full">
+                <Tabs defaultValue="hotel" className="w-full h-full">
                   <TabsList className="bg-[#F5F9F2] mb-4">
                     <TabsTrigger
                       value="hotel"
@@ -90,25 +91,18 @@ export default function Dashboard() {
                     >
                       Guardería
                     </TabsTrigger>
-                    <TabsTrigger
+                    {/* <TabsTrigger
                       className="data-[state=active]:bg-secondary! data-[state=active]:text-white! hover:cursor-pointer"
                       value="train"
                     >
                       Entrenamiento
-                    </TabsTrigger>
+                    </TabsTrigger> */}
                   </TabsList>
                   <TabsContent value="hotel">
                     <HotelQuickForm />
                   </TabsContent>
                   <TabsContent value="daycare">
-                    <div>
-                      <p className="text-lg font-bold">Guardería</p>
-                    </div>
-                  </TabsContent>
-                  <TabsContent value="train">
-                    <div>
-                      <p className="text-lg font-bold">Entrenamiento</p>
-                    </div>
+                    <DayCareQuickForm />
                   </TabsContent>
                 </Tabs>
               </div>

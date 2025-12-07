@@ -12,7 +12,7 @@ import {
 
 const Guests = () => {
   return (
-    <div className="h-full px-6 py-4">
+    <div className="h-full px-6 py-4 overflow-auto">
       <div className="flex justify-between items-center mb-8">
         <div>
           <p className="text-2xl font-bold">Guestión de Peks</p>

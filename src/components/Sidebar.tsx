@@ -7,7 +7,7 @@ import {
   LogOutIcon,
   MenuIcon,
   SettingsIcon,
-  UserIcon,
+  UsersIcon,
   X,
 } from "lucide-react";
 import { SidebarNavLink } from "./SidebarNavLink";
@@ -60,15 +60,15 @@ export default function Sidebar({
             isCollapsed={isCollapsed}
           />
           <SidebarNavLink
-            icon={UserIcon}
-            label="Perfil"
-            to="/perfil"
-            isCollapsed={isCollapsed}
-          />
-          <SidebarNavLink
             icon={DogIcon}
             label="Visitantes perrunos"
             to="/visitantes-perrunos"
+            isCollapsed={isCollapsed}
+          />
+          <SidebarNavLink
+            icon={UsersIcon}
+            label="Propietarios"
+            to="/propietarios"
             isCollapsed={isCollapsed}
           />
           <SidebarNavLink

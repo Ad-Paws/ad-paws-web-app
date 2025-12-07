@@ -6,6 +6,7 @@ import { PublicRoute } from "./components/PublicRoute";
 import Dashboard from "./pages/dashboard/Dashboard";
 import DashboardLayout from "./layouts/DashboardLayout";
 import Guests from "./pages/guests/Guests";
+import Owners from "./pages/owners/Owners";
 
 export const routes = createBrowserRouter([
   {
@@ -41,6 +42,20 @@ export const routes = createBrowserRouter([
       {
         path: "",
         Component: Guests,
+      },
+    ],
+  },
+  {
+    path: "/propietarios",
+    element: (
+      <ProtectedRoute>
+        <DashboardLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        path: "",
+        Component: Owners,
       },
     ],
   },

@@ -6,13 +6,16 @@ import { routes } from "./routes.tsx";
 import { ApolloProvider } from "@apollo/client/react";
 import { apolloClient } from "./lib/api/apolloClient";
 import { AuthProvider } from "./contexts/AuthContext";
+import NiceModal from "@ebay/nice-modal-react";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ApolloProvider client={apolloClient}>
-      <AuthProvider>
-        <RouterProvider router={routes} />
-      </AuthProvider>
-    </ApolloProvider>
+    <NiceModal.Provider>
+      <ApolloProvider client={apolloClient}>
+        <AuthProvider>
+          <RouterProvider router={routes} />
+        </AuthProvider>
+      </ApolloProvider>
+    </NiceModal.Provider>
   </StrictMode>
 );

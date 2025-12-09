@@ -12,7 +12,7 @@ const AdPawsCard = ({
   return (
     <Card
       className={clsx(
-        "bg-white border-[#E4F0E4] rounded-md p-6 relative",
+        "bg-white dark:bg-gray-700 border-[#E4F0E4] rounded-md p-6 relative",
         className
       )}
     >

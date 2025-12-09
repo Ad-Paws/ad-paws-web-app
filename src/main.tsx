@@ -7,15 +7,18 @@ import { ApolloProvider } from "@apollo/client/react";
 import { apolloClient } from "./lib/api/apolloClient";
 import { AuthProvider } from "./contexts/AuthContext";
 import NiceModal from "@ebay/nice-modal-react";
+import { ThemeProvider } from "./contexts/ThemeContext.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <NiceModal.Provider>
-      <ApolloProvider client={apolloClient}>
-        <AuthProvider>
-          <RouterProvider router={routes} />
-        </AuthProvider>
-      </ApolloProvider>
-    </NiceModal.Provider>
+    <ThemeProvider>
+      <NiceModal.Provider>
+        <ApolloProvider client={apolloClient}>
+          <AuthProvider>
+            <RouterProvider router={routes} />
+          </AuthProvider>
+        </ApolloProvider>
+      </NiceModal.Provider>
+    </ThemeProvider>
   </StrictMode>
 );

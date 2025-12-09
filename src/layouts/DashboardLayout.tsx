@@ -11,7 +11,7 @@ export default function DashboardLayout() {
     setIsCollapsed(!isCollapsed);
   };
   return (
-    <div className="h-dvh w-full bg-background">
+    <div className="h-dvh w-full bg-background dark:bg-background-dark">
       {/* Sidebar */}
       <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
 

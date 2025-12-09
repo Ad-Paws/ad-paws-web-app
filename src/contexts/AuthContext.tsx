@@ -8,16 +8,24 @@ import React, {
 } from "react";
 import { USER_DATA_KEY } from "@/lib/auth";
 import { apolloClient } from "@/lib/api/apolloClient";
-import { USER_QUERY } from "@/lib/api/user.api";
+import { LOGOUT_MUTATION, USER_QUERY } from "@/lib/api/user.api";
 
 // Types
 export interface User {
   id?: string;
   email?: string;
   name?: string;
+  company?: Company;
   // Add more user properties as needed
 }
 
+export interface Company {
+  id: string;
+  logoUrl: string;
+  name: string;
+  ownerId: string;
+  uuid: string;
+}
 export interface AuthContextValue {
   user: User | null;
   isAuthenticated: boolean;
@@ -26,6 +34,7 @@ export interface AuthContextValue {
   logout: () => void;
   updateUser: (userData: User) => void;
   refetchUser: () => Promise<void>;
+  company: Company | null;
 }
 
 // Create Context
@@ -39,13 +48,14 @@ interface AuthProviderProps {
 // Provider Component
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
+  const [company, setCompany] = useState<Company | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch user data from API
   const fetchUserData = useCallback(async () => {
     try {
       const { data } = await apolloClient.query<{
-        user: { id: string; email: string; name: string };
+        user: { id: string; email: string; name: string; company: Company };
       }>({
         query: USER_QUERY,
         fetchPolicy: "network-only", // Always fetch fresh data
@@ -57,9 +67,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
           email: data.user.email,
           name: data.user.name,
         };
-
+        const companyData: Company = {
+          id: data.user.company.id,
+          logoUrl: data.user.company.logoUrl,
+          name: data.user.company.name,
+          ownerId: data.user.company.ownerId,
+          uuid: data.user.company.uuid,
+        };
         // Update state and localStorage
         setUser(userData);
+        setCompany(companyData);
         localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
 
         return userData;
@@ -111,10 +128,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   );
 
   // Logout function - clear local data (server will handle cookie removal)
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     // Clear local storage
     localStorage.removeItem(USER_DATA_KEY);
-
+    await apolloClient.mutate<{ logoutUser: { success: boolean } }>({
+      mutation: LOGOUT_MUTATION,
+    });
     // Clear state
     setUser(null);
   }, []);
@@ -146,6 +165,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     logout,
     updateUser,
     refetchUser,
+    company,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

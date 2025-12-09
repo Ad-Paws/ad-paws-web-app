@@ -59,8 +59,10 @@ const PetCard: React.FC<PetCardProps> = ({
       <div className="px-4 pb-4">
         {/* Name and Breed */}
         <div className="mb-4">
-          <h3 className="text-xl font-semibold text-gray-900">{name}</h3>
-          <p className="text-sm text-gray-500">{breed}</p>
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+            {name}
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{breed}</p>
         </div>
 
         {/* Stats */}
@@ -69,13 +71,17 @@ const PetCard: React.FC<PetCardProps> = ({
             <p className="text-sm text-gray-400 uppercase tracking-wide">
               Edad
             </p>
-            <p className="text-base font-medium text-gray-700">{age}</p>
+            <p className="text-base font-medium text-gray-700 dark:text-white">
+              {age}
+            </p>
           </div>
           <div className="flex-1 text-center border-r-1 border-[#F3F4F6]  border-l-1">
             <p className="text-sm text-gray-400 uppercase tracking-wide">
               Peso
             </p>
-            <p className="text-base font-medium text-gray-700">{weight}</p>
+            <p className="text-base font-medium text-gray-700 dark:text-white">
+              {weight}
+            </p>
           </div>
           <div className="flex-1 text-center">
             <p className="text-sm text-gray-400 uppercase tracking-wide">
@@ -92,7 +98,7 @@ const PetCard: React.FC<PetCardProps> = ({
           <Button
             variant="outline"
             size="lg"
-            className="flex-1 rounded-md border-[#E4F0E4] text-gray-700 hover:bg-[#E4F0E4]/50"
+            className="flex-1 rounded-md border-[#E4F0E4] text-gray-700 dark:text-white hover:bg-[#E4F0E4]/50 dark:hover:bg-gray-500/50"
             onClick={onViewProfile}
           >
             Ver perfil
@@ -100,7 +106,7 @@ const PetCard: React.FC<PetCardProps> = ({
           <Button
             variant="outline"
             size="lg"
-            className="w-9 h-9 p-0 rounded-full border-[#E4F0E4] text-[#80AF80] hover:bg-[#E4F0E4]/50"
+            className="w-9 h-9 p-0 rounded-full border-[#E4F0E4] text-[#80AF80] hover:bg-[#E4F0E4]/50 dark:hover:bg-gray-500/50"
             onClick={onMessage}
           >
             <MessageSquareIcon className="w-4 h-4" />

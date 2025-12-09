@@ -28,7 +28,7 @@ const MiniInsightCard: React.FC<MiniInsightCardProps> = ({
     >
       <div className="flex flex-row justify-between items-center">
         <div className="flex flex-col gap-2">
-          <p className="text-xs text-[#6B7280] uppercase tracking-wide font-medium">
+          <p className="text-xs text-[#6B7280] dark:text-gray-400 uppercase tracking-wide font-medium">
             {title}
           </p>
           <p className="text-2xl font-bold">{data}</p>

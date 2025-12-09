@@ -7,6 +7,7 @@ import Dashboard from "./pages/dashboard/Dashboard";
 import DashboardLayout from "./layouts/DashboardLayout";
 import Guests from "./pages/guests/Guests";
 import Owners from "./pages/owners/Owners";
+import Services from "./pages/services/Services";
 
 export const routes = createBrowserRouter([
   {
@@ -42,6 +43,20 @@ export const routes = createBrowserRouter([
       {
         path: "",
         Component: Guests,
+      },
+    ],
+  },
+  {
+    path: "/servicios",
+    element: (
+      <ProtectedRoute>
+        <DashboardLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        path: "",
+        Component: Services,
       },
     ],
   },

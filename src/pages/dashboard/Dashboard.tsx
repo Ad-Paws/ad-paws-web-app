@@ -3,6 +3,7 @@ import InsightCard from "@/components/Dashboard/InsightCard";
 import DayCareQuickForm from "@/components/Form/Forms/DayCareQuickForm";
 import HotelQuickForm from "@/components/Form/Forms/HotelQuickForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/contexts/AuthContext";
 import { getClockTime, getFormattedDate, getTimeOfDay } from "@/lib/utils";
 import {
   ArrowUpIcon,
@@ -13,13 +14,16 @@ import {
 } from "lucide-react";
 
 export default function Dashboard() {
+  const { user, company } = useAuth();
   return (
     <div className="h-full px-6 py-4 overflow-auto">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <p className="text-2xl font-bold">¡{getTimeOfDay()}, Enrique!</p>
+          <p className="text-2xl font-bold">
+            ¡{getTimeOfDay()}, {user?.name}!
+          </p>
           <p className="text-[#6B7280] mt-1 ml-1">
-            Esto es lo que ha pasado hoy en Casa Pek.
+            Esto es lo que ha pasado hoy en {company?.name}.
           </p>
         </div>
         <div>
@@ -78,7 +82,7 @@ export default function Dashboard() {
               <p className="text-lg font-bold">Check-In rápido</p>
               <div className="mt-6 h-full">
                 <Tabs defaultValue="hotel" className="w-full h-full">
-                  <TabsList className="bg-[#F5F9F2] mb-4">
+                  <TabsList className="bg-[#F5F9F2] dark:bg-gray-500 mb-4">
                     <TabsTrigger
                       value="hotel"
                       className="data-[state=active]:bg-secondary! data-[state=active]:text-white! hover:cursor-pointer"

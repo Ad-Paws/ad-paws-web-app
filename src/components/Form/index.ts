@@ -7,4 +7,8 @@ export { FormDescription } from "./FormDescription"
 export { FormMessage } from "./FormMessage"
 export { FormSelect, type SelectOption, type SelectOptionGroup } from "./FormSelect"
 export { FormDatePicker } from "./FormDatePicker"
+export { FormDateRangePicker, type DateRangeValue } from "./FormDateRangePicker"
+export { FormCheckbox } from "./FormCheckbox"
+export { FormServiceTypeCard, type FormServiceTypeCardProps, type ServiceTypeVariant } from "./FormServiceTypeCard"
+export { FormAdditionalServiceItem, type FormAdditionalServiceItemProps, type ServiceItemVariant } from "./FormAdditionalServiceItem"
 

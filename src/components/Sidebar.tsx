@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 import Logo from "./Logo";
 import { Button } from "./ui/button";
 import {
+  BoneIcon,
   DogIcon,
   HomeIcon,
   LogOutIcon,
@@ -11,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { SidebarNavLink } from "./SidebarNavLink";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Sidebar({
   isCollapsed,
@@ -19,6 +21,12 @@ export default function Sidebar({
   isCollapsed: boolean;
   toggleSidebar: () => void;
 }) {
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+  };
+
   return (
     <aside
       className={cn(
@@ -72,6 +80,12 @@ export default function Sidebar({
             isCollapsed={isCollapsed}
           />
           <SidebarNavLink
+            icon={BoneIcon}
+            label="Servicios"
+            to="/servicios"
+            isCollapsed={isCollapsed}
+          />
+          <SidebarNavLink
             icon={SettingsIcon}
             label="Configuración"
             to="/configuracion"
@@ -82,6 +96,7 @@ export default function Sidebar({
           icon={LogOutIcon}
           label="Cerrar sesión"
           isCollapsed={isCollapsed}
+          onClick={handleLogout}
         />
       </nav>
     </aside>

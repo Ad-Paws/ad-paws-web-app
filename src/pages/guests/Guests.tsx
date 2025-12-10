@@ -114,8 +114,16 @@ const Guests = () => {
               <PetCard
                 name={dog.name}
                 breed={dog.breed}
-                age={dog.age.toString()}
-                weight={dog.weight?.toString() || ""}
+                age={
+                  dog.ageYears > 0
+                    ? `${dog.ageYears}a ${
+                        dog.ageMonths > 0 ? `${dog.ageMonths} m` : ""
+                      }`
+                    : dog.ageMonths > 0
+                    ? `${dog.ageMonths} m`
+                    : "S/D"
+                }
+                weight={`${dog.weight}kg`}
                 sex={dog.gender || "Male"}
                 imageUrl={dog.imageUrl || ""}
                 ownerAvatarUrl={dog.owner?.profilePicture || ""}

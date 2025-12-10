@@ -8,6 +8,7 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import Guests from "./pages/guests/Guests";
 import Owners from "./pages/owners/Owners";
 import Services from "./pages/services/Services";
+import ClientSignup from "./pages/authentication/ClientSignup";
 
 export const routes = createBrowserRouter([
   {
@@ -85,6 +86,20 @@ export const routes = createBrowserRouter([
       {
         path: "login",
         Component: Login,
+      },
+    ],
+  },
+  {
+    path: "/registro-cliente",
+    element: (
+      <PublicRoute>
+        <ClientSignup />
+      </PublicRoute>
+    ),
+    children: [
+      {
+        path: "",
+        Component: ClientSignup,
       },
     ],
   },

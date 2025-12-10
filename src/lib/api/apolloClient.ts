@@ -1,26 +1,15 @@
-import { ApolloClient, HttpLink, InMemoryCache } from "@apollo/client";
+import { ApolloClient, InMemoryCache } from "@apollo/client";
+import UploadHttpLink from "apollo-upload-client/UploadHttpLink.mjs";
 
-// HTTP connection to the API
-const httpLink = new HttpLink({
+const uploadLink = new UploadHttpLink({
   uri: `${import.meta.env.VITE_BACKEND_API_URL}/graphql`,
   credentials: "include",
+  headers: {
+    "Apollo-Require-Preflight": "true", // si usas Apollo Server 3/4 con csrfPrevention
+  },
 });
 
-// Auth link to add token to headers
-// const authLink = setContext((_, { headers }) => {
-//   // Get the authentication token from local storage if it exists
-//   const token = getAccessToken();
-
-//   // Return the headers to the context so httpLink can read them
-//   return {
-//     headers: {
-//       ...headers,
-//       authorization: token ? `Bearer ${token}` : "",
-//     },
-//   };
-// });
-
 export const apolloClient = new ApolloClient({
-  link: httpLink,
+  link: uploadLink,
   cache: new InMemoryCache(),
 });

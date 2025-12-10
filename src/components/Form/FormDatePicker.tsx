@@ -94,9 +94,12 @@ export const FormDatePicker = React.forwardRef<
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar
+            month={value ? new Date(value) : undefined}
+            reverseYears
             mode="single"
             selected={value}
             onSelect={handleSelect}
+            captionLayout="dropdown"
             disabled={(date) => {
               if (minDate && date < minDate) return true;
               if (maxDate && date > maxDate) return true;

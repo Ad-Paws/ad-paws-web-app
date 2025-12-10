@@ -33,3 +33,17 @@ export const LOGOUT_MUTATION = gql`
     }
   }
 `;
+
+export const CREATE_USER_CLIENT = gql`
+  mutation Mutation($input: CreateUserInput) {
+    createUser(input: $input) {
+      user {
+        id
+      }
+      tokens {
+        accessToken
+        refreshToken
+      }
+    }
+  }
+`;

@@ -91,7 +91,8 @@ export interface Dog {
   id?: ID | null;
   name: string;
   breed: string;
-  age: number;
+  ageYears: number;
+  ageMonths: number;
   weight?: number | null;
   color?: string | null;
   gender?: Gender | null;

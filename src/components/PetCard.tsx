@@ -3,15 +3,14 @@ import AdPawsCard from "./AdPawsCard";
 import { Button } from "./ui/button";
 import { MarsIcon, MessageSquareIcon, VenusIcon } from "lucide-react";
 import clsx from "clsx";
-
-type PetSex = "male" | "female";
+import type { Gender } from "@/types/Dog";
 
 interface PetCardProps {
   name: string;
   breed: string;
   age: string;
   weight: string;
-  sex: PetSex;
+  sex: Gender;
   imageUrl: string;
   ownerAvatarUrl?: string;
   onViewProfile?: () => void;
@@ -19,8 +18,8 @@ interface PetCardProps {
   className?: string;
 }
 
-const SexIcon: React.FC<{ sex: PetSex }> = ({ sex }) => {
-  if (sex === "male") {
+const SexIcon: React.FC<{ sex: Gender }> = ({ sex }) => {
+  if (sex === "Male") {
     return <MarsIcon className="w-5 h-5" stroke="#60A5AD" />;
   }
   return <VenusIcon className="w-5 h-5" stroke="#E57399" />;
@@ -41,7 +40,7 @@ const PetCard: React.FC<PetCardProps> = ({
   return (
     <AdPawsCard className={clsx("!p-0 overflow-hidden w-full", className)}>
       {/* Pet Image */}
-      <div className="relative aspect-[4/3] w-full">
+      <div className="relative aspect-[4/3] w-full max-h-[284px]">
         <img src={imageUrl} alt={name} className="w-full h-full object-cover" />
         {/* Owner Avatar */}
         {ownerAvatarUrl && (

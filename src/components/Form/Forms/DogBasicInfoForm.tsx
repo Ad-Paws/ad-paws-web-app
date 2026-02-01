@@ -7,6 +7,7 @@ import { FormLabel } from "../FormLabel";
 import { FormControl } from "../FormControl";
 import { FormMessage } from "../FormMessage";
 import { FormSelect, type SelectOption } from "../FormSelect";
+import { FormDatePicker } from "../FormDatePicker";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DOG_BREEDS, calculateAge, cn } from "@/lib/utils";
@@ -162,11 +163,15 @@ const DogBasicInfoForm = ({
                 Fecha de nacimiento
               </FormLabel>
               <FormControl>
-                <Input
-                  type="date"
-                  max={new Date().toISOString().split("T")[0]}
-                  {...field}
-                  className="mt-1"
+                <FormDatePicker
+                  value={field.value ? new Date(field.value) : undefined}
+                  onChange={(date) => {
+                    field.onChange(
+                      date ? date.toISOString().split("T")[0] : ""
+                    );
+                  }}
+                  maxDate={new Date()}
+                  className="mt-1 bg-gray-50 focus:bg-white transition-colors"
                 />
               </FormControl>
               <FormMessage />

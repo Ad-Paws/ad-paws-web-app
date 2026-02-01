@@ -21,27 +21,29 @@ import {
   type ReservationItemCreateInput,
 } from "@/lib/api/reservations.api";
 import { formatPrice } from "../constants";
-import { CheckInSummary, DogSelector } from "../components";
-import type { Dog, CheckInFormValues } from "../types";
+import { CheckInSummary } from "../components";
+import type { CheckInFormValues } from "../types";
 
 interface DaycareFormProps {
   services: Service[];
   addonServices: Service[];
-  dogs: Dog[];
+  dogId: string;
   companyId: number;
   onSuccess: (
     reservation: CreateReservationResponse["createReservation"]
   ) => void;
   onCancel: () => void;
+  onBack: () => void;
 }
 
 export function DaycareForm({
   services,
   addonServices,
-  dogs,
+  dogId,
   companyId,
   onSuccess,
   onCancel,
+  onBack,
 }: DaycareFormProps) {
   const [createReservation, { loading: isSubmitting, error: mutationError }] =
     useMutation<CreateReservationResponse, CreateReservationVariables>(
@@ -54,7 +56,7 @@ export function DaycareForm({
       selectedServiceId: services.length === 1 ? services[0].id : "",
       stayDates: { from: undefined, to: undefined },
       additionalServices: [],
-      dogId: "",
+      dogId: dogId,
     },
     mode: "onChange",
   });
@@ -67,11 +69,6 @@ export function DaycareForm({
   const selectedAdditionalServices = useWatch({
     control: form.control,
     name: "additionalServices",
-  });
-
-  const selectedDogId = useWatch({
-    control: form.control,
-    name: "dogId",
   });
 
   // Get the selected service details
@@ -111,7 +108,6 @@ export function DaycareForm({
 
   const isFormValid = () => {
     if (services.length > 1 && !selectedServiceId) return false;
-    if (!selectedDogId) return false;
     return true;
   };
 
@@ -180,38 +176,7 @@ export function DaycareForm({
         </div>
       )}
 
-      {/* 1. Dog Selection - First step after service type */}
-      <FormField
-        name="dogId"
-        rules={{ required: "Por favor selecciona un perro" }}
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel className="text-sm font-medium text-muted-foreground">
-              Selecciona el perro
-            </FormLabel>
-            <FormControl>
-              {dogs.length > 0 ? (
-                <DogSelector
-                  dogs={dogs}
-                  selectedDogId={field.value}
-                  onSelect={field.onChange}
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center py-4 text-center bg-amber-50 rounded-xl">
-                  <AlertCircle className="w-8 h-8 text-amber-500 mb-2" />
-                  <p className="text-sm text-gray-600">
-                    No hay perros registrados. Por favor registra un perro
-                    primero.
-                  </p>
-                </div>
-              )}
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      {/* 2. Service Selection - only show if multiple services */}
+      {/* 1. Service Selection - only show if multiple services */}
       {services.length > 1 && (
         <FormField
           name="selectedServiceId"
@@ -274,7 +239,7 @@ export function DaycareForm({
         </div>
       )}
 
-      {/* 3. Additional Services (Add-ons) */}
+      {/* 2. Additional Services (Add-ons) */}
       {addonServices.length > 0 && (
         <FormField
           name="additionalServices"
@@ -327,7 +292,7 @@ export function DaycareForm({
         />
       )}
 
-      {/* 4. Summary */}
+      {/* 3. Summary */}
       <CheckInSummary
         serviceType="DAYCARE"
         selectedService={selectedService}
@@ -337,7 +302,15 @@ export function DaycareForm({
       />
 
       {/* Actions */}
-      <div className="flex gap-3 pt-2 flex-col">
+      <div className="flex gap-3 pt-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="flex-1 rounded-full"
+          onClick={onBack}
+        >
+          Atrás
+        </Button>
         <Button
           type="submit"
           className="flex-1 rounded-full bg-[#3D2E1E] hover:bg-[#2D1E0E] text-white"
@@ -351,15 +324,15 @@ export function DaycareForm({
             "Confirmar Check-in"
           )}
         </Button>
-        <Button
-          type="button"
-          variant="link"
-          className="flex-1 rounded-full"
-          onClick={onCancel}
-        >
-          Cancelar
-        </Button>
       </div>
+      <Button
+        type="button"
+        variant="link"
+        className="w-full rounded-full"
+        onClick={onCancel}
+      >
+        Cancelar
+      </Button>
     </Form>
   );
 }

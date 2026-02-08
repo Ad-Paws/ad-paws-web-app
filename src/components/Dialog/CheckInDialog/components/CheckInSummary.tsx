@@ -1,6 +1,7 @@
 import { type Service } from "@/lib/api/services.api";
 import { SERVICE_TYPE_CONFIG, formatDate, formatPrice } from "../constants";
-import type { ServiceType, DateRangeValue } from "../types";
+import type { ServiceType } from "../types";
+import type { DateRangeValue } from "@/components/Form";
 
 interface CheckInSummaryProps {
   serviceType: ServiceType;
@@ -40,10 +41,10 @@ export function CheckInSummary({
               config.variant === "green"
                 ? "bg-green-100 text-green-600"
                 : config.variant === "blue"
-                  ? "bg-blue-100 text-blue-600"
-                  : config.variant === "amber"
-                    ? "bg-amber-100 text-amber-600"
-                    : "bg-rose-100 text-rose-600"
+                ? "bg-blue-100 text-blue-600"
+                : config.variant === "amber"
+                ? "bg-amber-100 text-amber-600"
+                : "bg-rose-100 text-rose-600"
             }`}
           >
             <Icon className="w-5 h-5" />
@@ -105,7 +106,9 @@ export function CheckInSummary({
                   className="flex items-center justify-between text-sm"
                 >
                   <span>{addon.name}</span>
-                  <span className="font-medium">{formatPrice(addon.price)}</span>
+                  <span className="font-medium">
+                    {formatPrice(addon.price)}
+                  </span>
                 </div>
               );
             })}

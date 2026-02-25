@@ -1,14 +1,6 @@
-import { Button } from "@/components/ui/button";
 import MiniInsightCard from "@/components/Dashboard/MiniInsightCard";
 import PetCard from "@/components/PetCard";
-import {
-  CheckIcon,
-  FileUpIcon,
-  PawPrintIcon,
-  PlusIcon,
-  StarIcon,
-  SyringeIcon,
-} from "lucide-react";
+import { CheckIcon, PawPrintIcon, StarIcon, SyringeIcon } from "lucide-react";
 import { COMPANY_DOGS } from "@/lib/api/dogs.api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@apollo/client/react";
@@ -37,22 +29,22 @@ const Guests = () => {
           </p>
         </div>
         <div className="flex gap-4">
-          <Button
+          {/* <Button
             variant={"link"}
             size={"lg"}
             className="rounded-md bg-white text-black! hover:no-underline"
           >
             <FileUpIcon className="w-4 h-4" />
             Exportar
-          </Button>
-          <Button
+          </Button> */}
+          {/* <Button
             variant={undefined}
             size={"lg"}
             className="rounded-md bg-accent!"
           >
             <PlusIcon className="w-4 h-4" />
             Añadir nuevo Pek
-          </Button>
+          </Button> */}
         </div>
       </div>
 

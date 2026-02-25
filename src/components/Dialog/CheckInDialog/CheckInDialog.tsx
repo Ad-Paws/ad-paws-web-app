@@ -78,7 +78,6 @@ export default NiceModal.create(() => {
       (s: Service) => s.type === selectedServiceType && s.category === "MAIN"
     ) || [];
 
-  // Get ADDON services for the selected type
   const addonServicesForSelectedType =
     servicesData?.servicesByCompany?.filter(
       (s: Service) => s.type === selectedServiceType && s.category === "ADDON"
@@ -195,15 +194,15 @@ export default NiceModal.create(() => {
   const getStepInfo = () => {
     switch (currentStep) {
       case "service-type":
-        return { step: 1, total: 4, label: "Tipo de servicio" };
+        return { step: 1, total: 3, label: "Tipo de servicio" };
       case "dog-selection":
-        return { step: 2, total: 4, label: "Seleccionar perro" };
+        return { step: 2, total: 3, label: "Seleccionar perro" };
       case "service-form":
-        return { step: 3, total: 4, label: "Detalles del servicio" };
+        return { step: 3, total: 3, label: "Detalles del servicio" };
       case "summary":
-        return { step: 4, total: 4, label: "Confirmar" };
+        return { step: 4, total: 3, label: "Confirmar" };
       default:
-        return { step: 1, total: 4, label: "" };
+        return { step: 1, total: 3, label: "" };
     }
   };
 

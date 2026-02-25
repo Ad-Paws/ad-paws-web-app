@@ -6,7 +6,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Mail, Phone, SquarePen, Trash2 } from "lucide-react";
+import { Mail, Phone } from "lucide-react";
 import type { UserStatus } from "@/types/Dog";
 
 export interface OwnerReservation {
@@ -64,7 +64,7 @@ const getLastVisit = (dogs: OwnerDog[]): string => {
   if (allReservations.length === 0) return "Sin visitas";
 
   const mostRecent = allReservations.reduce((latest, current) =>
-    new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest
+    new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest,
   );
 
   return new Date(mostRecent.createdAt).toLocaleDateString("es-MX", {
@@ -77,7 +77,7 @@ const getLastVisit = (dogs: OwnerDog[]): string => {
 const DEFAULT_AVATAR =
   "https://ui-avatars.com/api/?background=8B7355&color=fff&name=";
 
-const OwnersTable = ({ data, onEdit, onDelete }: OwnersTableProps) => {
+const OwnersTable = ({ data }: OwnersTableProps) => {
   return (
     <div className="bg-white dark:bg-gray-700 rounded-xl shadow-sm flex-1 flex flex-col min-h-0 overflow-hidden">
       <div className="overflow-auto flex-1">
@@ -99,9 +99,9 @@ const OwnersTable = ({ data, onEdit, onDelete }: OwnersTableProps) => {
               <TableHead className="text-xs text-[#6B7280] dark:text-gray-100 font-medium uppercase tracking-wider py-4 px-4">
                 Última visita
               </TableHead>
-              <TableHead className="text-xs text-[#6B7280] dark:text-gray-100 font-medium uppercase tracking-wider py-4 px-4 text-center">
+              {/* <TableHead className="text-xs text-[#6B7280] dark:text-gray-100 font-medium uppercase tracking-wider py-4 px-4 text-center">
                 Acciones
-              </TableHead>
+              </TableHead> */}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -118,7 +118,7 @@ const OwnersTable = ({ data, onEdit, onDelete }: OwnersTableProps) => {
                         src={
                           owner.profilePicture ||
                           `${DEFAULT_AVATAR}${encodeURIComponent(
-                            owner.email.charAt(0).toUpperCase()
+                            owner.email.charAt(0).toUpperCase(),
                           )}`
                         }
                         alt={owner.email}
@@ -199,7 +199,7 @@ const OwnersTable = ({ data, onEdit, onDelete }: OwnersTableProps) => {
                 <TableCell className="py-4 px-4">
                   <span
                     className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${getStatusStyles(
-                      owner.status
+                      owner.status,
                     )}`}
                   >
                     {owner.status}
@@ -214,7 +214,7 @@ const OwnersTable = ({ data, onEdit, onDelete }: OwnersTableProps) => {
                 </TableCell>
 
                 {/* Actions */}
-                <TableCell className="py-4 px-4">
+                {/* <TableCell className="py-4 px-4">
                   <div className="flex items-center justify-center gap-2">
                     <button
                       className="p-2 hover:bg-[#F3F4F6] dark:hover:bg-gray-500/50 rounded-lg transition-colors group"
@@ -229,7 +229,7 @@ const OwnersTable = ({ data, onEdit, onDelete }: OwnersTableProps) => {
                       <Trash2 className="w-5 h-5 text-[#9CA3AF] group-hover:text-red-500" />
                     </button>
                   </div>
-                </TableCell>
+                </TableCell> */}
               </TableRow>
             ))}
           </TableBody>

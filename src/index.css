@@ -50,6 +50,14 @@
   --input: #dce8dc;
   --ring: #80af80;
 
+  /* badges de estado */
+  --badge-success: #dce8dc;
+  --badge-success-foreground: #4f744f;
+  --badge-warning: #f8e8ce;
+  --badge-warning-foreground: #95692a;
+  --badge-danger: #fbe3e3;
+  --badge-danger-foreground: #9c5555;
+
   /* charts & sidebar los amarramos a tu brand */
   --chart-1: #80af80;
   --chart-2: #4c2d22;
@@ -99,6 +107,13 @@
   --border: #202720;
   --input: #202720;
   --ring: #80af80;
+
+  --badge-success: #1e3a1e;
+  --badge-success-foreground: #a4c0a4;
+  --badge-warning: #3a2a10;
+  --badge-warning-foreground: #e8b564;
+  --badge-danger: #3a1e1e;
+  --badge-danger-foreground: #f0aaaa;
 
   --chart-1: #80af80;
   --chart-2: #c5daef;
@@ -168,6 +183,13 @@ body {
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  --color-badge-success: var(--badge-success);
+  --color-badge-success-foreground: var(--badge-success-foreground);
+  --color-badge-warning: var(--badge-warning);
+  --color-badge-warning-foreground: var(--badge-warning-foreground);
+  --color-badge-danger: var(--badge-danger);
+  --color-badge-danger-foreground: var(--badge-danger-foreground);
 
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);

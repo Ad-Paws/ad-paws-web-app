@@ -16,6 +16,7 @@ import {
 import { type Service } from "@/lib/api/services.api";
 import {
   CREATE_RESERVATION,
+  RESERVATIONS_BY_COMPANY,
   type CreateReservationResponse,
   type CreateReservationVariables,
   type ReservationItemCreateInput,
@@ -23,6 +24,7 @@ import {
 import { formatPrice } from "../constants";
 import { CheckInSummary } from "../components";
 import type { CheckInFormValues } from "../types";
+import { GET_TODAYS_REVENUE } from "@/lib/api/stats.api";
 
 interface DaycareFormProps {
   services: Service[];
@@ -30,7 +32,7 @@ interface DaycareFormProps {
   dogId: string;
   companyId: number;
   onSuccess: (
-    reservation: CreateReservationResponse["createReservation"]
+    reservation: CreateReservationResponse["createReservation"],
   ) => void;
   onCancel: () => void;
   onBack: () => void;
@@ -43,11 +45,13 @@ export function DaycareForm({
   companyId,
   onSuccess,
   onCancel,
-  onBack,
 }: DaycareFormProps) {
   const [createReservation, { loading: isSubmitting, error: mutationError }] =
     useMutation<CreateReservationResponse, CreateReservationVariables>(
-      CREATE_RESERVATION
+      CREATE_RESERVATION,
+      {
+        refetchQueries: [RESERVATIONS_BY_COMPANY, GET_TODAYS_REVENUE],
+      },
     );
 
   const form = useForm<CheckInFormValues>({
@@ -75,7 +79,7 @@ export function DaycareForm({
   const selectedService = services.find(
     (s) =>
       s.id === selectedServiceId ||
-      (services.length === 1 && s.id === services[0].id)
+      (services.length === 1 && s.id === services[0].id),
   );
 
   // Calculate total
@@ -98,7 +102,7 @@ export function DaycareForm({
 
   const toggleAdditionalService = (
     serviceId: string,
-    currentServices: string[]
+    currentServices: string[],
   ) => {
     if (currentServices.includes(serviceId)) {
       return currentServices.filter((id) => id !== serviceId);
@@ -111,61 +115,63 @@ export function DaycareForm({
     return true;
   };
 
-  const handleSubmit = async (data: CheckInFormValues) => {
-    // Get the actual service (auto-select if only one available)
-    const serviceId =
-      data.selectedServiceId || (services.length === 1 ? services[0].id : "");
-    const service = services.find((s) => s.id === serviceId);
+  const submitWithPayment = (paymentStatus: "PAID" | "UNPAID") => {
+    form.handleSubmit(async (data: CheckInFormValues) => {
+      const serviceId =
+        data.selectedServiceId || (services.length === 1 ? services[0].id : "");
+      const service = services.find((s) => s.id === serviceId);
 
-    if (!service || !data.dogId) return;
+      if (!service || !data.dogId) return;
 
-    // Build reservation items
-    const items: ReservationItemCreateInput[] = [];
+      const items: ReservationItemCreateInput[] = [];
 
-    // Add main service
-    items.push({
-      serviceId: Number(service.id),
-      name: service.name,
-      quantity: 1,
-      unitPrice: service.price,
-      totalPrice: service.price,
-      kind: "MAIN",
-    });
-
-    // Add additional services as ADDONs
-    data.additionalServices.forEach((additionalServiceId) => {
-      const addon = addonServices.find((s) => s.id === additionalServiceId);
-      if (addon) {
-        items.push({
-          serviceId: Number(addon.id),
-          name: addon.name,
-          quantity: 1,
-          unitPrice: addon.price,
-          totalPrice: addon.price,
-          kind: "ADDON",
-        });
-      }
-    });
-
-    try {
-      const result = await createReservation({
-        variables: {
-          dogId: Number(data.dogId),
-          companyId,
-          items,
-        },
+      items.push({
+        serviceId: Number(service.id),
+        name: service.name,
+        quantity: 1,
+        unitPrice: service.price,
+        totalPrice: service.price,
+        kind: "MAIN",
       });
 
-      if (result.data?.createReservation) {
-        onSuccess(result.data.createReservation);
+      data.additionalServices.forEach((additionalServiceId) => {
+        const addon = addonServices.find((s) => s.id === additionalServiceId);
+        if (addon) {
+          items.push({
+            serviceId: Number(addon.id),
+            name: addon.name,
+            quantity: 1,
+            unitPrice: addon.price,
+            totalPrice: addon.price,
+            kind: "ADDON",
+          });
+        }
+      });
+
+      try {
+        const result = await createReservation({
+          variables: {
+            dogId: Number(data.dogId),
+            companyId,
+            items,
+            paymentStatus,
+            paymentSource: "BUSINESS",
+            checkIn: new Date().toISOString(),
+            status: "CHECKED_IN",
+          },
+        });
+
+        if (result.data?.createReservation) {
+          onSuccess(result.data.createReservation);
+        }
+      } catch (error) {
+        console.error("Error creating reservation:", error);
       }
-    } catch (error) {
-      console.error("Error creating reservation:", error);
-    }
+    })();
   };
 
   return (
-    <Form form={form} onSubmit={handleSubmit} className="space-y-6 pt-2">
+    <Form form={form} onSubmit={() => {}} className="space-y-6 pt-2">
       {/* Mutation Error */}
       {mutationError && (
         <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
@@ -263,7 +269,7 @@ export function DaycareForm({
                         checked={field.value.includes(addon.id)}
                         onCheckedChange={() =>
                           field.onChange(
-                            toggleAdditionalService(addon.id, field.value)
+                            toggleAdditionalService(addon.id, field.value),
                           )
                         }
                         className="data-[state=checked]:bg-[#A3C585] data-[state=checked]:border-[#A3C585]"
@@ -302,29 +308,41 @@ export function DaycareForm({
       />
 
       {/* Actions */}
-      <div className="flex gap-3 pt-2">
+
+      <div className="flex flex-col gap-3">
         <Button
           type="button"
-          variant="outline"
-          className="flex-1 rounded-full"
-          onClick={onBack}
-        >
-          Atrás
-        </Button>
-        <Button
-          type="submit"
-          className="flex-1 rounded-full bg-[#3D2E1E] hover:bg-[#2D1E0E] text-white"
+          className="rounded-full bg-[#4D67A3] hover:bg-[#293a5b] text-white"
           disabled={isSubmitting || !isFormValid()}
+          size="lg"
+          onClick={() => submitWithPayment("PAID")}
         >
           {isSubmitting ? (
             <>
               <Spinner /> Procesando...
             </>
           ) : (
-            "Confirmar Check-in"
+            "Pagar y confirmar"
+          )}
+        </Button>
+        <Button
+          type="button"
+          className="rounded-full"
+          disabled={isSubmitting || !isFormValid()}
+          size="lg"
+          variant="outline"
+          onClick={() => submitWithPayment("UNPAID")}
+        >
+          {isSubmitting ? (
+            <>
+              <Spinner /> Procesando...
+            </>
+          ) : (
+            "Pendiente de pago"
           )}
         </Button>
       </div>
+
       <Button
         type="button"
         variant="link"

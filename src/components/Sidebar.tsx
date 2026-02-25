@@ -7,7 +7,6 @@ import {
   HomeIcon,
   LogOutIcon,
   MenuIcon,
-  SettingsIcon,
   UsersIcon,
   X,
 } from "lucide-react";
@@ -31,7 +30,7 @@ export default function Sidebar({
     <aside
       className={cn(
         "fixed left-0 top-0 h-full bg-sidebar border-r border-sidebar-border p-4 flex flex-col transition-all duration-300 ease-in-out z-40",
-        isCollapsed ? "w-20" : "w-64"
+        isCollapsed ? "w-20" : "w-64",
       )}
     >
       <div className="flex items-center justify-center mb-8">
@@ -39,7 +38,7 @@ export default function Sidebar({
         <Logo
           className={cn(
             "transition-opacity duration-300",
-            isCollapsed ? "w-0 opacity-0 hidden" : "w-32 opacity-100"
+            isCollapsed ? "w-0 opacity-0 hidden" : "w-32 opacity-100",
           )}
         />
 
@@ -85,12 +84,12 @@ export default function Sidebar({
             to="/servicios"
             isCollapsed={isCollapsed}
           />
-          <SidebarNavLink
+          {/* <SidebarNavLink
             icon={SettingsIcon}
             label="Configuración"
             to="/configuracion"
             isCollapsed={isCollapsed}
-          />
+          /> */}
         </div>
         <SidebarNavLink
           icon={LogOutIcon}

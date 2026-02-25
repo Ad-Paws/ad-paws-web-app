@@ -1,13 +1,6 @@
 import MiniInsightCard from "@/components/Dashboard/MiniInsightCard";
-import { Button } from "@/components/ui/button";
-import {
-  Calculator,
-  FileUpIcon,
-  HeartPulse,
-  PlusIcon,
-  UserPlus,
-  UsersIcon,
-} from "lucide-react";
+
+import { Calculator, HeartPulse, UserPlus, UsersIcon } from "lucide-react";
 import OwnersTable, { type Owner } from "./OwnersTable";
 import { GET_OWNERS_QUERY } from "@/lib/api/user.api";
 import { useQuery } from "@apollo/client/react";
@@ -19,7 +12,7 @@ const Owners = () => {
     GET_OWNERS_QUERY,
     {
       variables: { companyId: Number(company?.id) },
-    }
+    },
   );
 
   const owners = data?.companyDogOwners ?? [];
@@ -38,22 +31,22 @@ const Owners = () => {
           </p>
         </div>
         <div className="flex gap-4">
-          <Button
+          {/* <Button
             variant={"link"}
             size={"lg"}
             className="rounded-md bg-white text-black! hover:no-underline"
           >
             <FileUpIcon className="w-4 h-4" />
             Exportar
-          </Button>
-          <Button
+          </Button> */}
+          {/* <Button
             variant={undefined}
             size={"lg"}
             className="rounded-md bg-accent!"
           >
             <PlusIcon className="w-4 h-4" />
             Añadir nuevo propietario
-          </Button>
+          </Button> */}
         </div>
       </div>
 

@@ -85,6 +85,8 @@ const transformService = (service: Service): ServicePricing => ({
   description: getServiceDescription(service),
   price: service.price,
   priceUnit: PRICING_UNIT_LABELS[service.pricingUnit],
+  status: service.status,
+  category: service.category,
 });
 
 interface ServiceTabContentProps {

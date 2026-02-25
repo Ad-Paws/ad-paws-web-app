@@ -14,6 +14,7 @@ import {
   type DogPackageBalance,
 } from "../../../../lib/api/dogPackages.api";
 import type { Dog } from "../types";
+import { useStatsigClient } from "@statsig/react-bindings";
 
 interface DogSelectorProps {
   dogs: Dog[];
@@ -29,21 +30,25 @@ export function DogSelector({
   selectedDogId,
   onSelect,
   onContinue,
-  placeholder = "Buscar perro...",
+  placeholder = "Buscar alumno...",
   showContinueButton = false,
 }: DogSelectorProps) {
+  const { client } = useStatsigClient();
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Get selected dog details
   const selectedDog = dogs.find((dog) => dog.id === selectedDogId);
-
+  const isPackageConsiderationEnabled = client.checkGate(
+    "dog_packages_consideration"
+  );
+  console.log("isPackageConsiderationEnabled", isPackageConsiderationEnabled);
   // Fetch active packages for the selected dog
   const { data: packagesData } = useQuery<{
     activeDogPackages: DogPackage[];
   }>(ACTIVE_DOG_PACKAGES, {
     variables: { dogId: selectedDogId ? Number(selectedDogId) : 0 },
-    skip: !selectedDogId,
+    skip: !selectedDogId || !isPackageConsiderationEnabled,
   });
 
   // Filter dogs based on search query

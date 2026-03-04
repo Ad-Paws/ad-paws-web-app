@@ -1,4 +1,4 @@
-import { BellIcon, SearchIcon } from "lucide-react";
+import { BellIcon } from "lucide-react";
 import { Button } from "./ui/button";
 import { useModal } from "@ebay/nice-modal-react";
 import SearchDialog from "./Dialog/SearchDialog";

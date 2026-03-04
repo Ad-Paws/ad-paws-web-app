@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import AdPawsCard from "./AdPawsCard";
 import { Button } from "./ui/button";
-import { MarsIcon, MessageSquareIcon, VenusIcon } from "lucide-react";
+import { MarsIcon, VenusIcon } from "lucide-react";
 import clsx from "clsx";
 import type { Gender } from "@/types/Dog";
 import { DOG_BREEDS } from "@/lib/utils";
@@ -39,7 +39,6 @@ const PetCard: React.FC<PetCardProps> = ({
   imageUrl,
   ownerAvatarUrl,
   onViewProfile,
-  onMessage,
   className,
 }) => {
   const navigate = useNavigate();
@@ -127,14 +126,14 @@ const PetCard: React.FC<PetCardProps> = ({
           >
             Ver perfil
           </Button>
-          <Button
+          {/* <Button
             variant="outline"
             size="lg"
             className="w-9 h-9 p-0 rounded-full border-[#E4F0E4] text-[#80AF80] hover:bg-[#E4F0E4]/50 dark:hover:bg-gray-500/50"
             onClick={onMessage}
           >
             <MessageSquareIcon className="w-4 h-4" />
-          </Button>
+          </Button> */}
         </div>
       </div>
     </AdPawsCard>

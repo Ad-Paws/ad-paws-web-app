@@ -27,7 +27,8 @@ const Header = () => {
 
   return (
     <div className="shrink-0 h-[80px] bg-white/60 dark:bg-gray-200/60 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-10 border-b border-[#E4F0E4]/50">
-      <div
+      <div></div>
+      {/* <div
         onClick={() => modal.show()}
         className="bg-[#E4F0E4] dark:bg-gray-500 max-w-[434px] flex flex-row gap-2 items-center border border-[#F3F4F6] rounded-md py-2 px-4 cursor-pointer"
       >
@@ -39,7 +40,7 @@ const Header = () => {
           </kbd>
           &nbsp; para buscar.
         </p>
-      </div>
+      </div> */}
       <div className="flex gap-6 items-center">
         <Button
           variant="outline"

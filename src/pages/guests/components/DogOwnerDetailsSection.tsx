@@ -1,5 +1,4 @@
-import { Phone, Mail, MapPin, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Phone, Mail } from "lucide-react";
 
 interface Owner {
   id?: string | null;
@@ -31,7 +30,7 @@ const DogOwnerDetailsSection = ({ owner }: DogOwnerDetailsSectionProps) => {
             "https://ui-avatars.com/api/?background=8B7355&color=fff&name=" +
               encodeURIComponent(
                 (owner.name?.charAt(0) || "") +
-                  (owner.lastname?.charAt(0) || "")
+                  (owner.lastname?.charAt(0) || ""),
               )
           }
           alt={`${owner.name} ${owner.lastname}`}
@@ -54,15 +53,15 @@ const DogOwnerDetailsSection = ({ owner }: DogOwnerDetailsSectionProps) => {
           <Mail className="w-4 h-4 text-gray-400" />
           <span>{owner.email}</span>
         </div>
-        <div className="flex items-start gap-3 text-sm">
+        {/* <div className="flex items-start gap-3 text-sm">
           <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
           <span className="text-gray-600">
             123 Oak Street, Apt 4B
             <br />
             Springfield, CA 90210
           </span>
-        </div>
-        <div className="flex items-center gap-3 text-sm">
+        </div> */}
+        {/* <div className="flex items-center gap-3 text-sm">
           <AlertCircle className="w-4 h-4 text-gray-400" />
           <div>
             <p className="text-xs text-gray-500 uppercase">
@@ -70,15 +69,14 @@ const DogOwnerDetailsSection = ({ owner }: DogOwnerDetailsSectionProps) => {
             </p>
             <span>John Wilson - (555) 987-6543</span>
           </div>
-        </div>
+        </div> */}
       </div>
 
-      <Button variant="outline" className="w-full mt-4 border-gray-200">
+      {/* <Button variant="outline" className="w-full mt-4 border-gray-200">
         Ver Perfil Completo
-      </Button>
+      </Button> */}
     </div>
   );
 };
 
 export default DogOwnerDetailsSection;
-

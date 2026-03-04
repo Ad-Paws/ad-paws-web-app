@@ -103,9 +103,9 @@ const DogProfileHeader = ({ dog, owner, onBack }: DogProfileHeaderProps) => {
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-1">
               <h2 className="text-2xl font-bold">{dog.name}</h2>
-              <span className="px-3 py-1 bg-[#4CAF50] text-white text-xs font-medium rounded-full">
+              {/* <span className="px-3 py-1 bg-[#4CAF50] text-white text-xs font-medium rounded-full">
                 Checked In
-              </span>
+              </span> */}
             </div>
             <p className="text-gray-300 mb-4">
               {DOG_BREEDS[dog.breed as keyof typeof DOG_BREEDS] || dog.breed} •{" "}
@@ -159,7 +159,7 @@ const DogProfileHeader = ({ dog, owner, onBack }: DogProfileHeaderProps) => {
                     "https://ui-avatars.com/api/?background=8B7355&color=fff&name=" +
                       encodeURIComponent(
                         (owner.name?.charAt(0) || "") +
-                          (owner.lastname?.charAt(0) || "")
+                          (owner.lastname?.charAt(0) || ""),
                       )
                   }
                   alt={`${owner.name} ${owner.lastname}`}

@@ -13,7 +13,7 @@ import {
   // DogBehavioralNotesSection,
   DogOwnerDetailsSection,
   // DogVaccinationsSection,
-  DogQuickStatsSection,
+  // DogQuickStatsSection,
   DogProfileSkeleton,
 } from "./components";
 
@@ -51,13 +51,13 @@ interface DogDetail extends Omit<Dog, "owner"> {
 //   { name: "Lyme Disease", expiry: "Aug 2025", status: "valid" as const },
 // ];
 
-const mockQuickStats = {
-  totalVisits: 47,
-  lastVisit: "Dec 28, 2024",
-  totalDays: 142,
-  favoriteService: "Daycare",
-  memberStatus: "Gold",
-};
+// const mockQuickStats = {
+//   totalVisits: 47,
+//   lastVisit: "Dec 28, 2024",
+//   totalDays: 142,
+//   favoriteService: "Daycare",
+//   memberStatus: "Gold",
+// };
 
 const DogProfile = () => {
   const { dogId } = useParams<{ dogId: string }>();
@@ -82,7 +82,7 @@ const DogProfile = () => {
       weight: dog?.weight?.toString() || "",
       size: dog?.size || "MEDIUM",
     }),
-    [dog]
+    [dog],
   );
 
   if (loading) {
@@ -126,7 +126,7 @@ const DogProfile = () => {
           <div className="space-y-6">
             {owner && <DogOwnerDetailsSection owner={owner} />}
             {/* <DogVaccinationsSection vaccinations={mockVaccinations} /> */}
-            <DogQuickStatsSection stats={mockQuickStats} />
+            {/* <DogQuickStatsSection stats={mockQuickStats} /> */}
           </div>
         </div>
       </div>

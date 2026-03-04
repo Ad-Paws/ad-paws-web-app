@@ -1,6 +1,5 @@
 import { useState } from "react";
 import NiceModal, { useModal } from "@ebay/nice-modal-react";
-import { useQuery } from "@apollo/client/react";
 import { AlertCircle, ArrowLeft } from "lucide-react";
 import {
   Dialog,
@@ -18,6 +17,8 @@ import { ServiceTypeCard, DogSelector } from "./components";
 import { DaycareForm, HotelForm } from "./forms";
 import type { Reservation } from "@/lib/api/reservations.api";
 import type { ServiceType, Dog } from "./types";
+import { useQuery } from "@tanstack/react-query";
+import { apolloClient } from "@/lib/api/apolloClient";
 
 type CheckInStep =
   | "service-type"
@@ -37,28 +38,43 @@ export default NiceModal.create(() => {
   // Fetch services for the company
   const {
     data: servicesData,
-    loading: servicesLoading,
+    isLoading: servicesLoading,
     error: servicesError,
-  } = useQuery<{ servicesByCompany: Service[] }>(SERVICES_BY_COMPANY, {
-    variables: {
-      input: {
-        companyId: company?.id ? Number(company.id) : 0,
-        active: true,
-      },
+  } = useQuery({
+    queryKey: ["servicesByCompany", company?.id],
+    queryFn: async () => {
+      const result = await apolloClient.query({
+        query: SERVICES_BY_COMPANY,
+        fetchPolicy: "no-cache",
+        variables: {
+          input: {
+            companyId: company?.id ? Number(company.id) : 0,
+            status: "ACTIVE",
+          },
+        },
+      });
+      return result.data as { servicesByCompany: Service[] };
     },
-    skip: !company?.id,
+    enabled: !!company?.id,
   });
 
   // Fetch dogs for the company
   const {
     data: dogsData,
-    loading: dogsLoading,
+    isLoading: dogsLoading,
     error: dogsError,
-  } = useQuery<{ companyDogs: Dog[] }>(COMPANY_DOGS, {
-    variables: {
-      companyId: company?.id ? Number(company.id) : 0,
+  } = useQuery<{ companyDogs: Dog[] }>({
+    queryKey: ["companyDogs", company?.id],
+    queryFn: async () => {
+      const result = await apolloClient.query({
+        query: COMPANY_DOGS,
+        variables: {
+          companyId: company?.id ? Number(company.id) : 0,
+        },
+      });
+      return result.data as { companyDogs: Dog[] };
     },
-    skip: !company?.id,
+    enabled: !!company?.id,
   });
 
   // Get unique service types that are available (only from MAIN category services)
@@ -67,7 +83,7 @@ export default NiceModal.create(() => {
         ...new Set(
           servicesData.servicesByCompany
             .filter((s: Service) => s.category === "MAIN")
-            .map((s: Service) => s.type)
+            .map((s: Service) => s.type),
         ),
       ] as ServiceType[])
     : [];
@@ -75,12 +91,12 @@ export default NiceModal.create(() => {
   // Get MAIN services for the selected type
   const mainServicesForSelectedType =
     servicesData?.servicesByCompany?.filter(
-      (s: Service) => s.type === selectedServiceType && s.category === "MAIN"
+      (s: Service) => s.type === selectedServiceType && s.category === "MAIN",
     ) || [];
 
   const addonServicesForSelectedType =
     servicesData?.servicesByCompany?.filter(
-      (s: Service) => s.type === selectedServiceType && s.category === "ADDON"
+      (s: Service) => s.type === selectedServiceType && s.category === "ADDON",
     ) || [];
 
   // Get dogs list

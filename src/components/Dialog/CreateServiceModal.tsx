@@ -179,7 +179,7 @@ export default NiceModal.create(
             )}
 
             {/* Sección de Información Básica */}
-            <div className="bg-amber-50/50 rounded-xl p-5 space-y-4">
+            <div className="bg-amber-50/50 dark:bg-amber-900/50 rounded-xl p-5 space-y-4">
               <div className="flex items-center gap-2 text-amber-700 font-medium mb-4">
                 <Info className="w-5 h-5" />
                 <span className="uppercase text-sm tracking-wide">
@@ -255,7 +255,7 @@ export default NiceModal.create(
             </div>
 
             {/* Sección de Detalles de Precio */}
-            <div className="bg-green-50/50 rounded-xl p-5 space-y-4">
+            <div className="bg-green-50/50 dark:bg-green-900/50 rounded-xl p-5 space-y-4">
               <div className="flex items-center gap-2 text-green-700 font-medium mb-4">
                 <DollarSign className="w-5 h-5" />
                 <span className="uppercase text-sm tracking-wide">
@@ -323,7 +323,7 @@ export default NiceModal.create(
             </div>
 
             {/* Sección de Horario y Duración */}
-            <div className="bg-yellow-50/50 rounded-xl p-5 space-y-4">
+            <div className="bg-yellow-50/50 dark:bg-yellow-900/50 rounded-xl p-5 space-y-4">
               <div className="flex items-center gap-2 text-yellow-700 font-medium mb-4">
                 <Clock className="w-5 h-5" />
                 <span className="uppercase text-sm tracking-wide">
@@ -420,7 +420,7 @@ export default NiceModal.create(
                               "px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all",
                               field.value.includes(day.value)
                                 ? "border-[#A3C585] bg-[#A3C585]/20 text-[#5D7A3A]"
-                                : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+                                : "border-gray-200 bg-white text-gray-600 hover:border-gray-300",
                             )}
                           >
                             {day.label}
@@ -464,5 +464,5 @@ export default NiceModal.create(
         </DialogContent>
       </Dialog>
     );
-  }
+  },
 );

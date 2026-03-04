@@ -40,7 +40,7 @@ export function DogSelector({
   // Get selected dog details
   const selectedDog = dogs.find((dog) => dog.id === selectedDogId);
   const isPackageConsiderationEnabled = client.checkGate(
-    "dog_packages_consideration"
+    "dog_packages_consideration",
   );
   console.log("isPackageConsiderationEnabled", isPackageConsiderationEnabled);
   // Fetch active packages for the selected dog
@@ -86,7 +86,7 @@ export function DogSelector({
             className={`w-full p-3 rounded-xl border-2 text-left transition-all flex items-center gap-3 ${
               selectedDog
                 ? "border-[#A3C585] bg-[#A3C585]/10"
-                : "border-gray-200 hover:border-gray-300"
+                : "border-gray-200 hover:border-gray-300 dark:hover:border-gray-600"
             }`}
           >
             {selectedDog ? (
@@ -159,7 +159,7 @@ export function DogSelector({
                     className={`w-full p-2 rounded-lg text-left transition-all flex items-center gap-3 ${
                       selectedDogId === dog.id
                         ? "bg-[#A3C585]/10"
-                        : "hover:bg-gray-100"
+                        : "hover:bg-gray-100 dark:hover:bg-gray-800"
                     }`}
                   >
                     {/* Dog Image */}
@@ -201,7 +201,7 @@ export function DogSelector({
       {selectedDog && showContinueButton && (
         <div className="space-y-4 mt-4">
           {/* Owner Info */}
-          <div className="p-4 rounded-xl border-2 border-gray-200 bg-gray-50">
+          <div className="p-4 rounded-xl border-2 border-gray-200 bg-gray-50 dark:bg-gray-700">
             <p className="text-xs font-medium text-muted-foreground mb-2">
               Información del dueño
             </p>
@@ -250,19 +250,19 @@ export function DogSelector({
                                     : "Ilimitado"}
                                 </span>
                               </div>
-                            )
+                            ),
                           )}
                         </div>
                         {dogPackage.expiryDate && (
                           <p className="text-xs text-gray-500 mt-2">
                             Vence:{" "}
                             {new Date(dogPackage.expiryDate).toLocaleDateString(
-                              "es-MX"
+                              "es-MX",
                             )}
                           </p>
                         )}
                       </div>
-                    )
+                    ),
                   )}
                 </div>
               </div>

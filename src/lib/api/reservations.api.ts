@@ -1,6 +1,9 @@
 import type { ReservationStatus } from "@/types/Dog";
 import { gql } from "@apollo/client";
 
+/** Nombre de la operación para refetchQueries sin variables */
+export const RESERVATIONS_BY_COMPANY_OPERATION = "ReservationsByCompany";
+
 export const RESERVATIONS_BY_COMPANY = gql`
   query ReservationsByCompany(
     $companyId: Int
@@ -192,4 +195,23 @@ export interface CreateReservationVariables {
 
 export interface CreateReservationResponse {
   createReservation: Reservation;
+}
+
+export const UPDATE_RESERVATION = gql`
+  mutation UpdateReservation($id: Int!, $data: ReservationUpdateInput!) {
+    updateReservation(id: $id, data: $data) {
+      id
+      status
+      checkOut
+      paymentStatus
+      updatedAt
+    }
+  }
+`;
+
+export interface ReservationUpdateInput {
+  status?: ReservationStatus;
+  checkOut?: string;
+  paymentStatus?: "UNPAID" | "PAID" | "REFUNDED";
+  paymentMethod?: string;
 }

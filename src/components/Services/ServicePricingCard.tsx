@@ -2,7 +2,13 @@ import { Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AdPawsCard from "@/components/AdPawsCard";
 import { Switch } from "../ui/switch";
-import { type ServiceCategory } from "@/lib/api/services.api";
+import {
+  UPDATE_SERVICE,
+  type Service,
+  type ServiceCategory,
+} from "@/lib/api/services.api";
+import { useMutation } from "@apollo/client/react";
+import { useQueryClient } from "@tanstack/react-query";
 
 export interface ServicePricing {
   id: string;
@@ -25,6 +31,20 @@ const ServicePricingCard = ({
   onEdit,
   onDelete,
 }: ServicePricingCardProps) => {
+  const queryClient = useQueryClient();
+  const [updateService, { loading: isUpdating }] = useMutation(UPDATE_SERVICE, {
+    onCompleted: async (result) => {
+      const resultData = result as { updateService: Service };
+      console.log(resultData);
+      await queryClient.invalidateQueries({
+        predicate: (query) => {
+          console.log(query);
+          return query.queryKey[0] === "servicesByCompany";
+        },
+      });
+    },
+  });
+
   const formattedPrice = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
@@ -32,11 +52,8 @@ const ServicePricingCard = ({
   }).format(service.price);
 
   const handleToggleStatus = () => {
-    if (service.status === "ACTIVE") {
-      onEdit?.({ ...service, status: "INACTIVE" });
-    } else {
-      onEdit?.({ ...service, status: "ACTIVE" });
-    }
+    const status = service.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+    updateService({ variables: { input: { id: service.id, status } } });
   };
 
   return (
@@ -44,9 +61,7 @@ const ServicePricingCard = ({
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <h3 className="font-bold text-secondary dark:text-secondary-foreground">
-              {service.name}
-            </h3>
+            <h3 className="font-bold text-secondary">{service.name}</h3>
             <span className="text-sm pt-[2px] text-muted-foreground">
               {service.category === "MAIN" ? "Principal" : "Adicional"}
             </span>
@@ -55,6 +70,7 @@ const ServicePricingCard = ({
         </div>
         <div>
           <Switch
+            disabled={isUpdating}
             checked={service.status === "ACTIVE"}
             onCheckedChange={handleToggleStatus}
           />
@@ -63,7 +79,7 @@ const ServicePricingCard = ({
 
       <div className="bg-[#F5F9F2] dark:bg-muted rounded-lg px-4 py-3 flex items-center justify-between">
         <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-bold text-secondary dark:text-secondary-foreground">
+          <span className="text-2xl font-bold text-secondary">
             {formattedPrice}
           </span>
           <span className="text-sm text-muted-foreground">

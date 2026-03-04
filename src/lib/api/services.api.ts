@@ -21,6 +21,17 @@ export const CREATE_SERVICE = gql`
   }
 `;
 
+export const UPDATE_SERVICE = gql`
+  mutation UpdateService($input: UpdateServiceInput) {
+    updateService(input: $input) {
+      id
+      name
+      status
+      companyId
+    }
+  }
+`;
+
 export interface CreateServiceInput {
   name: string;
   type: ServiceType;

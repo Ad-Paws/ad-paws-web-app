@@ -116,7 +116,7 @@ const ServiceTabContent = ({
     return (
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-24 rounded-xl" />
+          <Skeleton key={i} className="dark:bg-gray-700 h-24 rounded-xl" />
         ))}
       </div>
     );

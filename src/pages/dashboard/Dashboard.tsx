@@ -6,7 +6,7 @@ import TodaysRevenue from "@/components/Dashboard/TodaysRevenue";
 export default function Dashboard() {
   const { user, company } = useAuth();
   return (
-    <div className="h-[calc(100dvh-80px)] px-6 py-4 overflow-auto">
+    <div className="h-[calc(100dvh-80px)] px-6 py-4 overflow-hidden">
       <div className="flex justify-between items-center mb-8">
         <div>
           <p className="text-2xl font-bold">
@@ -22,7 +22,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 h-[calc(100%-92px)]">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 h-[calc(100%-108px)]">
         <CurrentGuests />
         <div className="flex flex-col gap-6">
           <TodaysRevenue />

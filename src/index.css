@@ -58,6 +58,31 @@
   --badge-danger: #fbe3e3;
   --badge-danger-foreground: #9c5555;
 
+  /* Toast notifications - Light theme */
+  --toast-success-bg: #e6f4f1;
+  --toast-success-border: #008073;
+  --toast-success-icon: #008073;
+  --toast-success-title: #133e3d;
+  --toast-success-text: #133e3d;
+
+  --toast-info-bg: #e7eef8;
+  --toast-info-border: #3b69ab;
+  --toast-info-icon: #3b69ab;
+  --toast-info-title: #2a4068;
+  --toast-info-text: #2a4068;
+
+  --toast-warning-bg: #fff3e5;
+  --toast-warning-border: #ff8100;
+  --toast-warning-icon: #ff8100;
+  --toast-warning-title: #7a3e00;
+  --toast-warning-text: #7a3e00;
+
+  --toast-error-bg: #ffe9e8;
+  --toast-error-border: #ff5b54;
+  --toast-error-icon: #ff5b54;
+  --toast-error-title: #7a1c19;
+  --toast-error-text: #7a1c19;
+
   /* charts & sidebar los amarramos a tu brand */
   --chart-1: #80af80;
   --chart-2: #4c2d22;
@@ -114,6 +139,31 @@
   --badge-warning-foreground: #e8b564;
   --badge-danger: #3a1e1e;
   --badge-danger-foreground: #f0aaaa;
+
+  /* Toast notifications - Dark theme */
+  --toast-success-bg: #133e3d;
+  --toast-success-border: #008073;
+  --toast-success-icon: #9fd3bb;
+  --toast-success-title: #9fd3bb;
+  --toast-success-text: #d7efe8;
+
+  --toast-info-bg: #1d2d45;
+  --toast-info-border: #3b69ab;
+  --toast-info-icon: #3b69ab;
+  --toast-info-title: #a8c0ea;
+  --toast-info-text: #cbd9f4;
+
+  --toast-warning-bg: #3a2823;
+  --toast-warning-border: #fca134;
+  --toast-warning-icon: #fca134;
+  --toast-warning-title: #ffd8a6;
+  --toast-warning-text: #ffe6c7;
+
+  --toast-error-bg: #3a1c1c;
+  --toast-error-border: #ff5b54;
+  --toast-error-icon: #ff5b54;
+  --toast-error-title: #ff9a96;
+  --toast-error-text: #ffd0ce;
 
   --chart-1: #80af80;
   --chart-2: #c5daef;

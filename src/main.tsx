@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
+import "./styles/toast.css";
 import { RouterProvider } from "react-router-dom";
 import { routes } from "./routes.tsx";
 import { ApolloProvider } from "@apollo/client/react";
@@ -13,6 +14,7 @@ import { StatsigSessionReplayPlugin } from "@statsig/session-replay";
 import { StatsigAutoCapturePlugin } from "@statsig/web-analytics";
 import { StatsigWrapper } from "./components/StatsigWrapper";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { AdPawsToastContainer } from "./lib/toast";
 
 const queryClient = new QueryClient();
 const STATSIG_CLIENT_KEY =
@@ -44,6 +46,7 @@ createRoot(document.getElementById("root")!).render(
               <StatsigWrapper>
                 <NiceModal.Provider>
                   <RouterProvider router={routes} />
+                  <AdPawsToastContainer />
                 </NiceModal.Provider>
               </StatsigWrapper>
             </StatsigProvider>

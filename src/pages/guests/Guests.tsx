@@ -1,6 +1,14 @@
+import { useState } from "react";
 import MiniInsightCard from "@/components/Dashboard/MiniInsightCard";
 import PetCard from "@/components/PetCard";
-import { CheckIcon, PawPrintIcon, StarIcon, SyringeIcon } from "lucide-react";
+import {
+  CheckIcon,
+  PawPrintIcon,
+  StarIcon,
+  SyringeIcon,
+  Grid3x3,
+  List,
+} from "lucide-react";
 import { COMPANY_DOGS } from "@/lib/api/dogs.api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@apollo/client/react";
@@ -10,41 +18,52 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { GET_GUEST_STATS } from "@/lib/api/stats.api";
 import type { GuestsStats } from "@/types/Stats";
 import { formatAgeFromBirthDate } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import GuestListView from "./components/GuestListView";
+
+type ViewMode = "grid" | "list";
 
 const Guests = () => {
   const { company } = useAuth();
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
+
   const { data, loading } = useQuery<{ companyDogs: Dog[] }>(COMPANY_DOGS, {
     variables: { companyId: Number(company?.id) },
   });
   const { data: statsData, loading: statsLoading } = useQuery<{
     guestsStats: GuestsStats;
   }>(GET_GUEST_STATS);
+
   return (
     <div className="h-full px-6 py-4 overflow-auto">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <p className="text-2xl font-bold">Guestión de Peks</p>
+          <p className="text-2xl font-bold">Gestión de Peks</p>
           <p className="text-[#6B7280] mt-1">
             Edita perfiles, reportes médicos y más.
           </p>
         </div>
         <div className="flex gap-4">
-          {/* <Button
-            variant={"link"}
-            size={"lg"}
-            className="rounded-md bg-white text-black! hover:no-underline"
-          >
-            <FileUpIcon className="w-4 h-4" />
-            Exportar
-          </Button> */}
-          {/* <Button
-            variant={undefined}
-            size={"lg"}
-            className="rounded-md bg-accent!"
-          >
-            <PlusIcon className="w-4 h-4" />
-            Añadir nuevo Pek
-          </Button> */}
+          <div className="flex gap-1 bg-muted p-1 rounded-lg">
+            <Button
+              variant={viewMode === "list" ? "default" : "ghost"}
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setViewMode("list")}
+              aria-label="Vista de lista"
+            >
+              <List className="w-4 h-4" />
+            </Button>
+            <Button
+              variant={viewMode === "grid" ? "default" : "ghost"}
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setViewMode("grid")}
+              aria-label="Vista de cuadrícula"
+            >
+              <Grid3x3 className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -101,26 +120,30 @@ const Guests = () => {
         </div>
       )}
 
-      {/* Pet Cards Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
-        {loading
-          ? Array.from({ length: 4 }).map((_, index) => (
-              <PetCardSkeleton key={index} />
-            ))
-          : data?.companyDogs?.map((dog: Dog) => (
-              <PetCard
-                key={dog.id}
-                dogId={dog.id || undefined}
-                name={dog.name}
-                breed={dog.breed}
-                age={formatAgeFromBirthDate(dog.birthDate)}
-                weight={`${dog.weight}kg`}
-                sex={dog.gender || "Male"}
-                imageUrl={dog.imageUrl || ""}
-                ownerAvatarUrl={dog.owner?.profilePicture || ""}
-              />
-            ))}
-      </div>
+      {/* Pet Cards Grid / List View */}
+      {viewMode === "grid" ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
+          {loading
+            ? Array.from({ length: 4 }).map((_, index) => (
+                <PetCardSkeleton key={index} />
+              ))
+            : data?.companyDogs?.map((dog: Dog) => (
+                <PetCard
+                  key={dog.id}
+                  dogId={dog.id || undefined}
+                  name={dog.name}
+                  breed={dog.breed}
+                  age={formatAgeFromBirthDate(dog.birthDate)}
+                  weight={`${dog.weight}kg`}
+                  sex={dog.gender || "Male"}
+                  imageUrl={dog.imageUrl || ""}
+                  ownerAvatarUrl={dog.owner?.profilePicture || ""}
+                />
+              ))}
+        </div>
+      ) : (
+        <GuestListView dogs={data?.companyDogs || []} loading={loading} />
+      )}
     </div>
   );
 };

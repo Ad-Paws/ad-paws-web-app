@@ -2,6 +2,7 @@ import NiceModal, { useModal } from "@ebay/nice-modal-react";
 import { useForm } from "react-hook-form";
 import { useMutation } from "@apollo/client/react";
 import { Check, Info, DollarSign, Clock, AlertCircle } from "lucide-react";
+import CurrencyInput from "react-currency-input-field";
 import {
   Dialog,
   DialogContent,
@@ -277,21 +278,18 @@ export default NiceModal.create(
                         Precio <span className="text-red-500">*</span>
                       </FormLabel>
                       <FormControl>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                            $
-                          </span>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            className="pl-7"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(parseFloat(e.target.value) || 0)
-                            }
-                          />
-                        </div>
+                        <CurrencyInput
+                          prefix="$"
+                          placeholder="$0.00"
+                          decimalsLimit={2}
+                          decimalSeparator="."
+                          groupSeparator=","
+                          value={field.value || ""}
+                          onValueChange={(value: string | undefined) =>
+                            field.onChange(parseFloat(value ?? "0") || 0)
+                          }
+                          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

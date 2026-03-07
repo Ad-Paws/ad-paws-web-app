@@ -215,3 +215,125 @@ export interface ReservationUpdateInput {
   paymentStatus?: "UNPAID" | "PAID" | "REFUNDED";
   paymentMethod?: string;
 }
+
+export const TODAYS_RESERVATIONS_BY_SERVICE_TYPE_OPERATION =
+  "TodaysReservationsByServiceType";
+
+export const TODAYS_RESERVATIONS_BY_SERVICE_TYPE = gql`
+  query TodaysReservationsByServiceType($companyId: Int!, $serviceType: String!) {
+    todaysReservationsByServiceType(
+      companyId: $companyId
+      serviceType: $serviceType
+    ) {
+      id
+      checkIn
+      checkOut
+      status
+      paymentStatus
+      dogId
+      companyId
+      dog {
+        id
+        name
+        breed
+        imageUrl
+        owner {
+          id
+          name
+          lastname
+        }
+      }
+      items {
+        id
+        name
+        kind
+        quantity
+        unitPrice
+        totalPrice
+        service {
+          id
+          name
+          type
+          category
+        }
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export interface TodaysReservationsByServiceTypeVariables {
+  companyId: number;
+  serviceType: string;
+}
+
+export interface TodaysReservationsByServiceTypeResponse {
+  todaysReservationsByServiceType: ReservationFull[];
+}
+
+export const RESERVATIONS_BY_SERVICE_TYPE_OPERATION =
+  "ReservationsByServiceType";
+
+export const RESERVATIONS_BY_SERVICE_TYPE = gql`
+  query ReservationsByServiceType(
+    $companyId: Int!
+    $serviceType: String!
+    $filters: ReservationFilterInput
+  ) {
+    reservationsByServiceType(
+      companyId: $companyId
+      serviceType: $serviceType
+      filters: $filters
+    ) {
+      id
+      checkIn
+      checkOut
+      status
+      paymentStatus
+      dogId
+      companyId
+      dog {
+        id
+        name
+        breed
+        imageUrl
+        owner {
+          id
+          name
+          lastname
+        }
+      }
+      items {
+        id
+        name
+        kind
+        quantity
+        unitPrice
+        totalPrice
+        service {
+          id
+          name
+          type
+          category
+        }
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export interface ReservationsByServiceTypeVariables {
+  companyId: number;
+  serviceType: string;
+  filters?: {
+    from?: string;
+    to?: string;
+    status?: string;
+  };
+}
+
+export interface ReservationsByServiceTypeResponse {
+  reservationsByServiceType: ReservationFull[];
+}

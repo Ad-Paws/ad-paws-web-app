@@ -48,6 +48,44 @@ export const CREATE_USER_CLIENT = gql`
   }
 `;
 
+export const GET_COMPANY_EMPLOYEES = gql`
+  query CompanyEmployees($companyId: Int!) {
+    companyEmployees(companyId: $companyId) {
+      id
+      name
+      lastname
+      email
+      phone
+      role
+      status
+      profilePicture
+    }
+  }
+`;
+
+export const ADD_EMPLOYEE_MUTATION = gql`
+  mutation AddEmployee($input: AddEmployeeInput!) {
+    addEmployee(input: $input) {
+      id
+      name
+      lastname
+      email
+      phone
+      role
+      status
+      profilePicture
+    }
+  }
+`;
+
+export const REMOVE_EMPLOYEE_MUTATION = gql`
+  mutation RemoveEmployee($userId: Int!) {
+    removeEmployee(userId: $userId) {
+      id
+    }
+  }
+`;
+
 export const GET_OWNERS_QUERY = gql`
   query CompanyDogOwners($companyId: Int) {
     companyDogOwners(companyId: $companyId) {

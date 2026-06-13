@@ -3,11 +3,12 @@ import Logo from "./Logo";
 import { Button } from "./ui/button";
 import {
   BoneIcon,
+  BookUserIcon,
   DogIcon,
   HomeIcon,
   LogOutIcon,
   MenuIcon,
-  UsersIcon,
+  Users2Icon,
   X,
 } from "lucide-react";
 import { SidebarNavLink } from "./SidebarNavLink";
@@ -73,9 +74,15 @@ export default function Sidebar({
             isCollapsed={isCollapsed}
           />
           <SidebarNavLink
-            icon={UsersIcon}
+            icon={BookUserIcon}
             label="Propietarios"
             to="/propietarios"
+            isCollapsed={isCollapsed}
+          />
+          <SidebarNavLink
+            icon={Users2Icon}
+            label="Equipo"
+            to="/equipo"
             isCollapsed={isCollapsed}
           />
           <SidebarNavLink

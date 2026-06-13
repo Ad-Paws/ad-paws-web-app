@@ -9,6 +9,7 @@ import Guests from "./pages/guests/Guests";
 import DogProfile from "./pages/guests/DogProfile";
 import Owners from "./pages/owners/Owners";
 import Services from "./pages/services/Services";
+import Team from "./pages/team/Team";
 import ClientSignup from "./pages/authentication/ClientSignup";
 
 export const routes = createBrowserRouter([
@@ -77,6 +78,20 @@ export const routes = createBrowserRouter([
       {
         path: "",
         Component: Owners,
+      },
+    ],
+  },
+  {
+    path: "/equipo",
+    element: (
+      <ProtectedRoute>
+        <DashboardLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        path: "",
+        Component: Team,
       },
     ],
   },

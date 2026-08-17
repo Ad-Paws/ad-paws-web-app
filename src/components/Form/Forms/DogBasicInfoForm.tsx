@@ -311,7 +311,7 @@ const DogBasicInfoForm = ({
           type="submit"
           disabled={isUpdating}
           size="lg"
-          className="bg-[#A3C585] hover:bg-[#8FB86E] text-black shadow-lg shadow-[#A3C585]/30 px-6 py-3 h-auto rounded-full font-semibold flex items-center gap-2"
+          className="bg-brand hover:bg-brand-border text-black shadow-lg shadow-brand/30 px-6 py-3 h-auto rounded-full font-semibold flex items-center gap-2"
         >
           {isUpdating ? (
             <>

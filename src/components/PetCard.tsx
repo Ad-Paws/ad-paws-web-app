@@ -129,7 +129,7 @@ const PetCard: React.FC<PetCardProps> = ({
           {/* <Button
             variant="outline"
             size="lg"
-            className="w-9 h-9 p-0 rounded-full border-[#E4F0E4] text-[#80AF80] hover:bg-[#E4F0E4]/50 dark:hover:bg-gray-500/50"
+            className="w-9 h-9 p-0 rounded-full border-[#E4F0E4] text-brand-strong hover:bg-[#E4F0E4]/50 dark:hover:bg-gray-500/50"
             onClick={onMessage}
           >
             <MessageSquareIcon className="w-4 h-4" />

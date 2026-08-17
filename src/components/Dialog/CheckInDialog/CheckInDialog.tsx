@@ -9,13 +9,15 @@ import {
 } from "../../ui/dialog";
 import { Button } from "../../ui/button";
 import { Skeleton } from "../../ui/skeleton";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { SERVICES_BY_COMPANY, type Service } from "@/lib/api/services.api";
-import { COMPANY_DOGS } from "@/lib/api/dogs.api";
-import { SERVICE_TYPE_CONFIG } from "./constants";
+import { type Service } from "@/lib/api/services.api";
+import { DOGS_QUERY } from "@/graphql/operations/dogs";
+import { SERVICES_QUERY } from "@/graphql/operations/services";
+import { mapServiceToLegacy } from "@/utils/adapters";
+import { SERVICE_TYPE_CONFIG, EXTRAS_TYPE_CONFIG } from "./constants";
 import { ServiceTypeCard, DogSelector } from "./components";
-import { DaycareForm, HotelForm } from "./forms";
-import type { Reservation } from "@/lib/api/reservations.api";
+import { DaycareForm, HotelForm, ExtrasForm } from "./forms";
 import type { ServiceType, Dog } from "./types";
 import { useQuery } from "@tanstack/react-query";
 import { apolloClient } from "@/lib/api/apolloClient";
@@ -26,13 +28,16 @@ type CheckInStep =
   | "service-form"
   | "summary";
 
+/** Selección del paso 1: un tipo de servicio principal, o extras sueltos. */
+type ServiceSelection = ServiceType | "EXTRAS";
+
 // eslint-disable-next-line react-refresh/only-export-components
 export default NiceModal.create(() => {
   const modal = useModal();
   const { company } = useAuth();
   const [currentStep, setCurrentStep] = useState<CheckInStep>("service-type");
   const [selectedServiceType, setSelectedServiceType] =
-    useState<ServiceType | null>(null);
+    useState<ServiceSelection | null>(null);
   const [selectedDogId, setSelectedDogId] = useState<string | null>(null);
 
   // Fetch services for the company
@@ -44,16 +49,15 @@ export default NiceModal.create(() => {
     queryKey: ["servicesByCompany", company?.id],
     queryFn: async () => {
       const result = await apolloClient.query({
-        query: SERVICES_BY_COMPANY,
+        query: SERVICES_QUERY,
         fetchPolicy: "no-cache",
-        variables: {
-          input: {
-            companyId: company?.id ? Number(company.id) : 0,
-            status: "ACTIVE",
-          },
-        },
+        variables: { status: "ACTIVE" as const },
       });
-      return result.data as { servicesByCompany: Service[] };
+      return {
+        servicesByCompany: (result.data?.services ?? []).map(
+          mapServiceToLegacy,
+        ),
+      };
     },
     enabled: !!company?.id,
   });
@@ -67,12 +71,23 @@ export default NiceModal.create(() => {
     queryKey: ["companyDogs", company?.id],
     queryFn: async () => {
       const result = await apolloClient.query({
-        query: COMPANY_DOGS,
-        variables: {
-          companyId: company?.id ? Number(company.id) : 0,
-        },
+        query: DOGS_QUERY,
+        variables: { first: 50 },
       });
-      return result.data as { companyDogs: Dog[] };
+      return {
+        companyDogs: (result.data?.dogs ?? []).map((dog) => ({
+          id: dog.id,
+          name: dog.name,
+          breed: dog.breed ?? "",
+          imageUrl: dog.imageUrl ?? undefined,
+          owner: dog.primaryOwner
+            ? {
+                name: dog.primaryOwner.name ?? undefined,
+                lastname: dog.primaryOwner.lastname ?? undefined,
+              }
+            : undefined,
+        })),
+      };
     },
     enabled: !!company?.id,
   });
@@ -99,6 +114,12 @@ export default NiceModal.create(() => {
       (s: Service) => s.type === selectedServiceType && s.category === "ADDON",
     ) || [];
 
+  // Todos los extras (ADDON) de la compañía, para el flujo de solo extras.
+  const allAddonServices =
+    servicesData?.servicesByCompany?.filter(
+      (s: Service) => s.category === "ADDON",
+    ) || [];
+
   // Get dogs list
   const dogs = dogsData?.companyDogs || [];
 
@@ -122,7 +143,7 @@ export default NiceModal.create(() => {
     }
   };
 
-  const handleServiceTypeSelect = (type: ServiceType) => {
+  const handleServiceTypeSelect = (type: ServiceSelection) => {
     setSelectedServiceType(type);
     setCurrentStep("dog-selection");
   };
@@ -138,9 +159,7 @@ export default NiceModal.create(() => {
     }
   };
 
-  const handleSuccess = (reservation: Reservation) => {
-    console.log("Reservation created:", reservation);
-    // TODO: Show success toast/notification
+  const handleSuccess = () => {
     modal.hide();
     setCurrentStep("service-type");
     setSelectedServiceType(null);
@@ -176,6 +195,16 @@ export default NiceModal.create(() => {
             onBack={handleBack}
           />
         );
+      case "EXTRAS":
+        return (
+          <ExtrasForm
+            services={allAddonServices}
+            dogId={selectedDogId}
+            onSuccess={handleSuccess}
+            onCancel={handleCancel}
+            onBack={handleBack}
+          />
+        );
       case "TRAINING":
         // TODO: Implement TrainingForm
         return (
@@ -195,16 +224,32 @@ export default NiceModal.create(() => {
     }
   };
 
+  /**
+   * Solo estos formularios traen `CheckInActionBar` pegada al fondo. Los
+   * placeholders de Training y Grooming caen en el mismo paso pero no la
+   * tienen, así que condicionar por paso les quitaría el respiro de abajo.
+   */
+  const formHasActionBar =
+    currentStep === "service-form" &&
+    (selectedServiceType === "DAYCARE" ||
+      selectedServiceType === "HOTEL" ||
+      selectedServiceType === "EXTRAS");
+
+  const selectedTypeConfig =
+    selectedServiceType === "EXTRAS"
+      ? EXTRAS_TYPE_CONFIG
+      : selectedServiceType
+        ? SERVICE_TYPE_CONFIG[selectedServiceType]
+        : null;
+
   const getDialogTitle = () => {
-    if (currentStep === "service-type") {
+    if (currentStep === "service-type" || !selectedTypeConfig) {
       return "Nuevo Check-in";
     }
     if (currentStep === "dog-selection") {
-      return `Seleccionar Perro - ${
-        SERVICE_TYPE_CONFIG[selectedServiceType!].title
-      }`;
+      return `Seleccionar Perro - ${selectedTypeConfig.title}`;
     }
-    return `Check-in - ${SERVICE_TYPE_CONFIG[selectedServiceType!].title}`;
+    return `Check-in - ${selectedTypeConfig.title}`;
   };
 
   const getStepInfo = () => {
@@ -226,11 +271,19 @@ export default NiceModal.create(() => {
 
   return (
     <Dialog open={modal.visible} onOpenChange={handleCancel}>
+      {/*
+        Columna flex en vez de un bloque con scroll: el encabezado es un
+        hermano que no encoge y el cuerpo se lleva el desbordamiento. La
+        versión anterior lo resolvía con `sticky` y `-mt-6`, y el margen
+        negativo dejaba una franja sobre el encabezado por donde se veía pasar
+        el contenido — el header quedaba pegado al borde del padding, no al
+        del contenedor.
+      */}
       <DialogContent
-        className="bg-white dark:bg-gray-800 max-w-xl max-h-[90vh] overflow-y-auto"
+        className="bg-white dark:bg-gray-800 max-w-xl max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden"
         onInteractOutside={(e) => e.preventDefault()}
       >
-        <DialogHeader>
+        <DialogHeader className="shrink-0 px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-700">
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               {currentStep !== "service-type" && (
@@ -250,7 +303,7 @@ export default NiceModal.create(() => {
             <div className="flex items-center gap-2">
               <div className="flex-1 bg-gray-200 rounded-full h-1.5">
                 <div
-                  className="bg-[#A3C585] h-1.5 rounded-full transition-all duration-300"
+                  className="bg-brand h-1.5 rounded-full transition-all duration-300"
                   style={{
                     width: `${(stepInfo.step / stepInfo.total) * 100}%`,
                   }}
@@ -263,6 +316,26 @@ export default NiceModal.create(() => {
           </div>
         </DialogHeader>
 
+        {/*
+          Cuerpo: lo único que scrollea. El px-6 vive aquí, así que la barra de
+          acciones puede sangrarse con -mx-6 para ocupar todo el ancho.
+
+          min-h-0 es obligatorio: en una columna flex el mínimo por defecto es
+          el contenido, así que sin esto el cuerpo no encoge, desborda el max-h
+          del diálogo y el scroll se va al contenedor equivocado.
+
+          El padding inferior depende de quién cierra la pantalla. En el paso
+          del formulario la barra de acciones va pegada abajo y necesita llegar
+          al ras — cualquier padding aquí la dejaría flotando con contenido
+          asomándose por debajo. En los pasos anteriores no hay barra, así que
+          el cuerpo pone su propio respiro o el contenido queda contra el borde.
+        */}
+        <div
+          className={cn(
+            "flex-1 min-h-0 overflow-y-auto px-6 pt-4",
+            formHasActionBar ? "pb-0" : "pb-6",
+          )}
+        >
         {/* Loading State */}
         {loading && (
           <div className="space-y-6 pt-2">
@@ -295,7 +368,10 @@ export default NiceModal.create(() => {
         )}
 
         {/* No Services Available */}
-        {!loading && !error && availableServiceTypes.length === 0 && (
+        {!loading &&
+          !error &&
+          availableServiceTypes.length === 0 &&
+          allAddonServices.length === 0 && (
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <AlertCircle className="w-12 h-12 text-amber-500 mb-4" />
             <p className="text-gray-600 dark:text-gray-400">
@@ -305,7 +381,9 @@ export default NiceModal.create(() => {
         )}
 
         {/* Content */}
-        {!loading && !error && availableServiceTypes.length > 0 && (
+        {!loading &&
+          !error &&
+          (availableServiceTypes.length > 0 || allAddonServices.length > 0) && (
           <>
             {/* Step 1: Service Type Selection */}
             {currentStep === "service-type" && (
@@ -328,6 +406,15 @@ export default NiceModal.create(() => {
                         />
                       );
                     })}
+                    {allAddonServices.length > 0 && (
+                      <ServiceTypeCard
+                        icon={EXTRAS_TYPE_CONFIG.icon}
+                        title={EXTRAS_TYPE_CONFIG.title}
+                        description={EXTRAS_TYPE_CONFIG.description}
+                        variant={EXTRAS_TYPE_CONFIG.variant}
+                        onClick={() => handleServiceTypeSelect("EXTRAS")}
+                      />
+                    )}
                   </div>
                 </div>
                 <Button
@@ -373,6 +460,7 @@ export default NiceModal.create(() => {
             {currentStep === "service-form" && renderServiceForm()}
           </>
         )}
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -23,13 +23,21 @@ import {
   FormSelect,
 } from "@/components/Form";
 import {
-  CREATE_SERVICE,
   type ServiceType,
   type ServiceCategory,
   type PricingUnit,
   type Service,
-  SERVICES_BY_COMPANY_AND_TYPE,
 } from "@/lib/api/services.api";
+import {
+  CREATE_SERVICE_MUTATION,
+  UPDATE_SERVICE_MUTATION,
+  SERVICES_QUERY,
+} from "@/graphql/operations/services";
+import {
+  dayValuesToDaysMask,
+  hhmmToMinute,
+  mapServiceToLegacy,
+} from "@/utils/adapters";
 import { cn } from "@/lib/utils";
 
 // Form values type
@@ -82,65 +90,105 @@ const DAYS_OF_WEEK = [
 
 export interface CreateServiceModalProps {
   companyId: number;
+  initialService?: Service;
   onSuccess?: (service: Service) => void;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
 export default NiceModal.create(
-  ({ companyId, onSuccess }: CreateServiceModalProps) => {
+  ({ companyId, initialService, onSuccess }: CreateServiceModalProps) => {
     const modal = useModal();
+    const isEditMode = !!initialService;
 
-    const [createService, { loading: isSubmitting, error: mutationError }] =
-      useMutation<{ createService: Service }>(CREATE_SERVICE);
+    const [createService, { loading: isCreating, error: createError }] =
+      useMutation(CREATE_SERVICE_MUTATION);
+
+    const [updateService, { loading: isUpdating, error: updateError }] =
+      useMutation(UPDATE_SERVICE_MUTATION);
+
+    const isSubmitting = isCreating || isUpdating;
+    const mutationError = createError || updateError;
 
     const form = useForm<CreateServiceFormValues>({
       defaultValues: {
-        name: "",
-        type: "" as ServiceType,
-        category: "MAIN" as ServiceCategory,
+        name: initialService?.name ?? "",
+        type: (initialService?.type ?? "") as ServiceType,
+        category: (initialService?.category ?? "MAIN") as ServiceCategory,
         companyId: companyId,
-        price: 0,
-        pricingUnit: "" as PricingUnit,
-        duration: 8,
-        startTime: "",
-        endTime: "",
-        daysAvailable: [],
+        price: initialService?.price ?? 0,
+        pricingUnit: (initialService?.pricingUnit ?? "") as PricingUnit,
+        duration: initialService?.duration ?? 8,
+        startTime: initialService?.startTime ?? "",
+        endTime: initialService?.endTime ?? "",
+        daysAvailable: initialService?.daysAvailable ?? [],
       },
       mode: "onChange",
     });
 
     const handleSubmit = async (data: CreateServiceFormValues) => {
       try {
-        const result = await createService({
-          variables: {
-            input: {
-              name: data.name,
-              type: data.type,
-              category: data.category,
-              companyId: data.companyId,
-              price: Number(data.price),
-              pricingUnit: data.pricingUnit,
-              duration: Number(data.duration),
-              startTime: data.startTime,
-              endTime: data.endTime,
-              daysAvailable: data.daysAvailable,
+        // El schema nuevo espera price como string decimal ("650.00"),
+        // horarios en minutos desde medianoche y días como bitmask; la
+        // compañía sale del contexto (header x-company-id).
+        if (isEditMode && initialService) {
+          // UpdateServiceInput no permite cambiar type/category.
+          const result = await updateService({
+            variables: {
+              id: initialService.id,
+              input: {
+                name: data.name,
+                price: Number(data.price).toFixed(2),
+                pricingUnit: data.pricingUnit,
+                durationMinutes: Number(data.duration),
+                opensAtMinute: hhmmToMinute(data.startTime),
+                closesAtMinute: hhmmToMinute(data.endTime),
+                daysMask: dayValuesToDaysMask(data.daysAvailable),
+              },
             },
-          },
-          refetchQueries: [
-            {
-              query: SERVICES_BY_COMPANY_AND_TYPE,
-              variables: { type: data.type, companyId: data.companyId },
-            },
-          ],
-        });
+            refetchQueries: [
+              {
+                query: SERVICES_QUERY,
+                variables: { type: data.type },
+              },
+            ],
+          });
 
-        if (result.data?.createService) {
-          onSuccess?.(result.data.createService);
-          modal.hide();
-          form.reset();
+          if (result.data?.updateService) {
+            onSuccess?.(mapServiceToLegacy(result.data.updateService));
+            modal.hide();
+            form.reset();
+          }
+        } else {
+          const result = await createService({
+            variables: {
+              input: {
+                name: data.name,
+                type: data.type,
+                category: data.category,
+                price: Number(data.price).toFixed(2),
+                pricingUnit: data.pricingUnit,
+                durationMinutes: Number(data.duration),
+                opensAtMinute: hhmmToMinute(data.startTime),
+                closesAtMinute: hhmmToMinute(data.endTime),
+                daysMask: dayValuesToDaysMask(data.daysAvailable),
+              },
+            },
+            refetchQueries: [
+              {
+                query: SERVICES_QUERY,
+                variables: { type: data.type },
+              },
+            ],
+          });
+
+          if (result.data?.createService) {
+            onSuccess?.(mapServiceToLegacy(result.data.createService));
+            modal.hide();
+            form.reset();
+          }
         }
       } catch (error) {
-        console.error("Error creating service:", error);
+        console.error("Error saving service:", error);
       }
     };
 
@@ -164,7 +212,7 @@ export default NiceModal.create(
         >
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold">
-              Crear Nuevo Servicio
+              {isEditMode ? "Editar Servicio" : "Crear Nuevo Servicio"}
             </DialogTitle>
           </DialogHeader>
 
@@ -174,7 +222,7 @@ export default NiceModal.create(
               <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>
-                  Error al crear el servicio. Por favor intenta de nuevo.
+                  Error al guardar el servicio. Por favor intenta de nuevo.
                 </span>
               </div>
             )}
@@ -417,7 +465,7 @@ export default NiceModal.create(
                             className={cn(
                               "px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all",
                               field.value.includes(day.value)
-                                ? "border-[#A3C585] bg-[#A3C585]/20 text-[#5D7A3A]"
+                                ? "border-brand-border bg-brand/20 text-[#5D7A3A]"
                                 : "border-gray-200 bg-white text-gray-600 hover:border-gray-300",
                             )}
                           >
@@ -449,11 +497,13 @@ export default NiceModal.create(
               >
                 {isSubmitting ? (
                   <>
-                    <Spinner className="mr-2" /> Creando...
+                    <Spinner className="mr-2" />{" "}
+                    {isEditMode ? "Guardando..." : "Creando..."}
                   </>
                 ) : (
                   <>
-                    <Check className="w-4 h-4 mr-2" /> Crear Servicio
+                    <Check className="w-4 h-4 mr-2" />{" "}
+                    {isEditMode ? "Guardar Cambios" : "Crear Servicio"}
                   </>
                 )}
               </Button>

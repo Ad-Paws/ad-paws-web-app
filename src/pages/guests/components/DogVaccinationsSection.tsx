@@ -22,7 +22,7 @@ const DogVaccinationsSection = ({
           </div>
           <h3 className="text-lg font-semibold">Vacunas</h3>
         </div>
-        <button className="text-[#A3C585] hover:text-[#8FB86E]">
+        <button className="text-brand-strong hover:text-brand-strong">
           <Plus className="w-5 h-5" />
         </button>
       </div>

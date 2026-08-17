@@ -1,4 +1,4 @@
-import { LOGIN_MUTATION } from "@/lib/api/user.api";
+import { SIGN_IN_MUTATION } from "@/graphql/operations/session";
 import { useMutation } from "@apollo/client/react";
 import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -11,16 +11,10 @@ interface LoginFormValues {
   password: string;
 }
 
-interface LoginResponse {
-  signUser: {
-    accessToken: string;
-    refreshToken: string;
-  };
-}
-
 export default function Login() {
-  const [signInUser, { loading, data, error }] =
-    useMutation<LoginResponse>(LOGIN_MUTATION);
+  // signUser crea la cookie de sesión en el servidor; los tokens devueltos
+  // no se guardan (ver src/lib/auth.ts).
+  const [signInUser, { loading, data, error }] = useMutation(SIGN_IN_MUTATION);
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();

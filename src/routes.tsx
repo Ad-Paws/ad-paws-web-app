@@ -9,8 +9,10 @@ import Guests from "./pages/guests/Guests";
 import DogProfile from "./pages/guests/DogProfile";
 import Owners from "./pages/owners/Owners";
 import Services from "./pages/services/Services";
+import Packages from "./pages/packages/Packages";
 import Team from "./pages/team/Team";
 import ClientSignup from "./pages/authentication/ClientSignup";
+import CompanySignup from "./pages/authentication/CompanySignup";
 
 export const routes = createBrowserRouter([
   {
@@ -64,6 +66,20 @@ export const routes = createBrowserRouter([
       {
         path: "",
         Component: Services,
+      },
+    ],
+  },
+  {
+    path: "/paquetes",
+    element: (
+      <ProtectedRoute>
+        <DashboardLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        path: "",
+        Component: Packages,
       },
     ],
   },
@@ -122,5 +138,13 @@ export const routes = createBrowserRouter([
         Component: ClientSignup,
       },
     ],
+  },
+  {
+    path: "/registro-empresa",
+    element: (
+      <PublicRoute>
+        <CompanySignup />
+      </PublicRoute>
+    ),
   },
 ]);

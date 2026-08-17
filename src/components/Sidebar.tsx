@@ -8,6 +8,7 @@ import {
   HomeIcon,
   LogOutIcon,
   MenuIcon,
+  PackageIcon,
   Users2Icon,
   X,
 } from "lucide-react";
@@ -89,6 +90,12 @@ export default function Sidebar({
             icon={BoneIcon}
             label="Servicios"
             to="/servicios"
+            isCollapsed={isCollapsed}
+          />
+          <SidebarNavLink
+            icon={PackageIcon}
+            label="Paquetes"
+            to="/paquetes"
             isCollapsed={isCollapsed}
           />
           {/* <SidebarNavLink

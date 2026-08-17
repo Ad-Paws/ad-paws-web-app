@@ -32,13 +32,37 @@
   --popover-foreground: #1a1a1a;
 
   --primary: #80af80; /* primario */
-  --primary-foreground: #ffffff;
+  /* Era #ffffff: blanco sobre este verde da 2.51:1, casi la mitad del mínimo
+     AA, y afecta a todo <Button> por defecto. El verde es demasiado claro para
+     llevar texto blanco; en oscuro sube a 6.93:1. */
+  --primary-foreground: #1a1a1a;
 
   --secondary: #4c2d22; /* café profesional */
   --secondary-foreground: #f5f9f2;
 
   --muted: #e4f0e4; /* bg-muted */
-  --muted-foreground: #7e7e7e; /* gris oscuro suave */
+  /* Era #7e7e7e: 4.06:1 en blanco y 3.46:1 sobre --background, ambos por
+     debajo del mínimo AA de 4.5. Este pasa en las tres superficies claras
+     (5.86 / 4.99 / 5.52) y es el color de casi todos los subtítulos. */
+  --muted-foreground: #5f6570;
+
+  /* ===== Marca =====
+     El verde de AdPaws es un color de RELLENO, no de tipografía: como fondo
+     con texto oscuro encima da 9.02:1, pero usado como color de letra sobre
+     blanco da 1.93:1 — muy por debajo del mínimo AA de 4.5. Por eso son dos
+     tokens distintos y no uno.
+
+     --brand         relleno, bordes, iconos decorativos
+     --brand-strong  la marca cuando es TEXTO (mismo tono, oscurecido a AA)
+     --brand-foreground  lo que va ENCIMA de un relleno de marca
+
+     Ojo: --brand-strong cambia con el tema. En oscuro el verde claro es el
+     legible (9.46:1) y el oscuro sería ilegible (2.89:1), así que se invierten. */
+  --brand: #a3c585;
+  --brand-strong: #4b6831; /* 6.32 blanco · 5.38 background · 5.95 tinte */
+  --brand-foreground: #1a1a1a; /* 9.02:1 sobre --brand */
+  --brand-tint: #f2f7ec;
+  --brand-border: #8fb86e;
 
   --accent: #e4a542; /* accent */
   --accent-foreground: #1a1a1a;
@@ -122,6 +146,14 @@
 
   --muted: #202720;
   --muted-foreground: #dce8dc;
+
+  /* En oscuro se invierten: el verde claro pasa a ser el legible (9.46:1
+     sobre --background) y el oscuro sería ilegible (2.89:1). */
+  --brand: #a3c585;
+  --brand-strong: #a3c585;
+  --brand-foreground: #121613;
+  --brand-tint: #1b2318;
+  --brand-border: #3a4a30;
 
   --accent: #e4a542;
   --accent-foreground: #121613;
@@ -254,6 +286,12 @@ body {
 
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-tint: var(--brand-tint);
+  --color-brand-border: var(--brand-border);
 
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);

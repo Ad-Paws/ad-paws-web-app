@@ -1,0 +1,1198 @@
+# =============================================================================
+# GENERATED — do not edit.
+#
+# Produced by `npm run schema:export` from src/schema/*.graphql.
+# Committed so consumers can generate types without a running server, and so
+# schema changes show up in review as a diff.
+#
+# The @auth and @public directives are kept deliberately: they tell a client
+# which operations need a session and which roles they require.
+# =============================================================================
+
+"""
+Requires an authenticated caller.
+
+When `requires` is given, the caller must additionally hold one of those roles
+in the company the request is scoped to (the x-company-id header, or their only
+company). Omitting `requires` means "any authenticated user", which is correct
+for fields that scope themselves to the caller — `me`, `myTransactions`.
+"""
+directive @auth(requires: [MembershipRole!]) on FIELD_DEFINITION | OBJECT
+
+"""
+Declares how many rows a list field can realistically return, for the node-count
+estimator in src/graphql/validation/cost.ts.
+
+Without it, an unpaginated list is charged the assumed page size (50). That is
+the right default for a list the caller could grow — dogs, reservations — but
+wrong by two orders of magnitude for lists the DOMAIN bounds: a package includes
+two or three services, a dog holds one or two packages. Multiplied down a tree,
+those wrong guesses reject queries that would return a few dozen rows.
+
+`assumedSize` must be an honest upper bound, not a typical one: it is what the
+estimator trusts instead of counting. Under-declaring it is how a genuinely
+expensive query slips past the budget, so annotate only where the schema itself
+makes the bound true, and leave anything the caller can grow unannotated.
+
+An explicit `first` on the field still wins — the caller asking for less is
+information the estimator should prefer over this declaration.
+"""
+directive @cost(assumedSize: Int!) on FIELD_DEFINITION
+
+"""
+Marks a field as intentionally expensive — excluded from the default complexity
+budget and logged when selected. Reserved for reports and aggregations.
+"""
+directive @costly(reason: String!) on FIELD_DEFINITION
+
+"""
+Explicitly reachable without authentication.
+
+Every field on Query and Mutation must carry either @auth or @public. The schema
+refuses to build otherwise, so a resolver added without thinking about access is
+a failed build rather than an open endpoint.
+
+Keep this list short and justify each use at the field.
+"""
+directive @public on FIELD_DEFINITION
+
+type Address {
+  city: String!
+  country: String!
+  id: ID!
+  latitude: String
+  longitude: String
+  neighborhood: String
+  state: String!
+  streetOne: String!
+  streetTwo: String
+  zip: String!
+}
+
+input AddressInput {
+  city: String!
+  country: String
+  neighborhood: String
+  state: String!
+  streetOne: String!
+  streetTwo: String
+  zip: String!
+}
+
+type AuthResponse {
+  accessToken: String!
+  refreshToken: String!
+}
+
+enum BillingCycle {
+  MONTHLY
+  QUARTERLY
+  WEEKLY
+  YEARLY
+}
+
+input ChangePasswordInput {
+  currentPassword: String!
+  newPassword: String!
+}
+
+type Company {
+  address: Address
+  createdAt: DateTime!
+  currency: String!
+  email: String!
+  id: ID!
+  logoUrl: String
+  name: String!
+  phone: String!
+  slug: String
+  status: CompanyStatus!
+  timezone: String!
+  uuid: String!
+}
+
+type CompanyMembership {
+  company: Company!
+  id: ID!
+  joinedAt: DateTime!
+  role: MembershipRole!
+  status: MembershipStatus!
+
+  """
+  The member. Without this, companyMembers returns roles nobody can attribute.
+  """
+  user: User!
+}
+
+enum CompanyStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+  SUSPENDED
+}
+
+input ConfirmPasswordResetInput {
+  newPassword: String!
+  token: String!
+}
+
+enum ContactType {
+  AUTHORIZED_PICKUP
+  EMERGENCY
+  VETERINARIAN
+}
+
+input CreateCompanyInput {
+  address: AddressInput
+  currency: String
+  email: String!
+  name: String!
+  phone: String!
+  slug: String
+  timezone: String
+}
+
+input CreateDogInput {
+  birthDate: DateTime
+  breed: String
+  color: String
+  contacts: [DogContactInput!]
+  gender: Gender
+  name: String!
+  notes: String
+
+  """
+  Owner of the dog. Staff omit it to register a dog for the client they are
+  serving; a client creating their own dog always becomes the owner regardless
+  of what is sent.
+  """
+  ownerUserId: ID
+  size: DogSize!
+
+  """Decimal string, e.g. "18.40"."""
+  weightKg: String
+}
+
+input CreateLeadInput {
+  email: String!
+  howManyDogs: Int
+  phone: String!
+  source: String
+}
+
+input CreatePackageInput {
+  """Required for SUBSCRIPTION, forbidden otherwise."""
+  billingCycle: BillingCycle
+  description: String
+  items: [PackageItemInput!]!
+  name: String!
+  price: Money!
+  type: PackageType
+
+  """
+  Required for UNLIMITED and whenever any item is unlimited (subscriptions are
+  bounded by their cycle instead).
+  """
+  validityDays: Int
+}
+
+input CreatePriceExceptionInput {
+  blockPackageUse: Boolean
+  daysMask: Int
+  description: String
+  endDate: DateTime!
+  isRecurring: Boolean
+  name: String!
+  priority: Int
+  reason: String
+  requireFullPrice: Boolean
+  serviceId: ID!
+  specialPrice: Money!
+  startDate: DateTime!
+}
+
+input CreateReservationInput {
+  addOnServiceIds: [ID!]
+  dogId: ID!
+  notes: String
+  scheduledCheckIn: DateTime!
+
+  """Required for HOTEL: a stay must contain at least one night."""
+  scheduledCheckOut: DateTime
+  serviceId: ID!
+}
+
+input CreateServiceInput {
+  capacity: Int
+  category: ServiceCategory
+  checkoutCutoffMinute: Int
+  closesAtMinute: Int
+  daysMask: Int
+  description: String
+  durationMinutes: Int!
+  lateCheckoutServiceId: ID
+  name: String!
+  opensAtMinute: Int
+  price: Money!
+  pricingUnit: PricingUnit
+  type: ServiceType!
+}
+
+input CreateUserInput {
+  birthDate: DateTime
+  email: String!
+  gender: Gender
+  lastname: String
+  name: String
+  password: String!
+  phone: String
+}
+
+type CreatedUser {
+  tokens: AuthResponse!
+  user: User!
+}
+
+"""ISO-8601 date and time."""
+scalar DateTime
+
+enum DayOfWeek {
+  FRIDAY
+  MONDAY
+  SATURDAY
+  SUNDAY
+  THURSDAY
+  TUESDAY
+  WEDNESDAY
+}
+
+type Dog {
+  birthDate: DateTime
+  breed: String
+  color: String
+
+  """This dog's relationship with the active company."""
+  companyProfile: DogCompanyProfile
+  contacts: [DogContact!]!
+  createdAt: DateTime!
+  gender: Gender
+  id: ID!
+  imageUrl: String
+  name: String!
+
+  """Operational notes. Structured facts belong in their own fields."""
+  notes: String
+  owners: [DogOwnership!]!
+  primaryOwner: User
+  size: DogSize!
+
+  """Kilograms, as a decimal string."""
+  weightKg: String
+}
+
+type DogBalance {
+  amount: Money!
+  dog: Dog!
+  reservations: Int!
+}
+
+"""
+Per-business record: when the dog first came, and notes only this company sees.
+"""
+type DogCompanyProfile {
+  active: Boolean!
+  firstVisitAt: DateTime!
+  lastVisitAt: DateTime
+  notes: String
+}
+
+type DogContact {
+  email: String
+  id: ID!
+  name: String!
+  notes: String
+  phone: String!
+  relation: String
+  type: ContactType!
+}
+
+input DogContactInput {
+  email: String
+  name: String!
+  notes: String
+  phone: String!
+  relation: String
+  type: ContactType!
+}
+
+type DogOwnership {
+  isPrimary: Boolean!
+  user: User!
+}
+
+"""One purchased package, belonging to one dog."""
+type DogPackage {
+  """One per included service, so it inherits the bound on Package.items."""
+  balances: [DogPackageBalance!]!
+  billingCycle: BillingCycle
+  cancellationReason: String
+  cancelledAt: DateTime
+  dog: Dog!
+  expiryDate: DateTime
+  id: ID!
+  package: Package!
+  purchaseDate: DateTime!
+
+  """When the next cycle is due. Only on subscriptions."""
+  renewalDate: DateTime
+
+  """
+  Renewal chain. Renewing creates a NEW DogPackage rather than resetting
+  balances, so every cycle keeps its own ledger.
+  """
+  renewedFrom: DogPackage
+  renewedTo: DogPackage
+  status: DogPackageStatus!
+}
+
+type DogPackageBalance {
+  """
+  Copied from the template at purchase time, so editing the package later never
+  changes the terms of one already sold.
+  """
+  daysMask: Int!
+  id: ID!
+
+  """Null means unlimited."""
+  initialQuantity: Int
+
+  """Every movement, with who made it and why."""
+  ledger: [PackageLedgerEntry!]!
+
+  """Derived: initialQuantity - usedQuantity. Null when unlimited."""
+  remainingQuantity: Int
+  service: Service!
+  usedQuantity: Int!
+}
+
+enum DogPackageStatus {
+  ACTIVE
+  CANCELLED
+  DEPLETED
+  EXPIRED
+}
+
+enum DogSize {
+  GIGANTIC
+  LARGE
+  MEDIUM
+  SMALL
+  TOY
+}
+
+"""
+What a service costs on a date, after exceptions.
+
+`basePrice` is the list price and `price` is what will be charged; when they
+differ, `exception` says why.
+"""
+type EffectivePrice {
+  basePrice: Money!
+  date: DateTime!
+
+  """False when the winning exception forbids discounts on this date."""
+  discountsAllowed: Boolean!
+  exception: ServicePriceException
+
+  """False when the winning exception blocks package balances on this date."""
+  packagesAllowed: Boolean!
+  price: Money!
+}
+
+"""Biological sex, as recorded for a person or a dog."""
+enum Gender {
+  FEMALE
+  MALE
+  OTHER
+}
+
+type GuestStats {
+  arrivingToday: Int!
+  checkedInNow: Int!
+  departingToday: Int!
+  newDogsThisMonth: Int!
+  totalDogs: Int!
+}
+
+"""
+Invites a person to the active company.
+
+Replaces `addEmployee`, which created a user with `role: "ADMIN"` hardcoded and
+no way to express any other relationship. The role is now explicit and the
+membership is a row that can be revoked without touching the user.
+"""
+input InviteMemberInput {
+  email: String!
+  lastname: String
+
+  """Only used when the email does not already belong to an account."""
+  name: String
+
+  """
+  Temporary password for a newly created account. Ignored for existing users.
+  """
+  password: String
+  phone: String
+  role: MembershipRole!
+}
+
+type InviteMemberPayload {
+  membership: CompanyMembership!
+  user: User!
+
+  """
+  True when a new account was created rather than an existing one linked.
+  """
+  userCreated: Boolean!
+}
+
+enum LedgerReason {
+  EXPIRY_WRITEOFF
+  MANUAL_ADJUSTMENT
+  PACKAGE_CANCELLED
+  RESERVATION_BOOKED
+  RESERVATION_CANCELLED
+}
+
+type LogoutResponse {
+  message: String
+  success: Boolean!
+}
+
+"""
+Roles a user may hold within one company. Mirrors the Prisma enum.
+A user holds these per company, not globally.
+"""
+enum MembershipRole {
+  ADMIN
+  CLIENT
+  OWNER
+  STAFF
+}
+
+enum MembershipStatus {
+  ACTIVE
+  REVOKED
+  SUSPENDED
+}
+
+"""
+A monetary amount as a fixed-point decimal string, e.g. "650.00".
+
+Never a JSON number. Doubles cannot represent decimal currency exactly, and
+serialising as Float would undo at the last step the reason every monetary
+column is Decimal in the database.
+"""
+scalar Money
+
+type Mutation {
+  _empty: String
+  addDogContact(dogId: ID!, input: DogContactInput!): DogContact!
+
+  """Manual correction. Always recorded in the ledger with who made it."""
+  adjustBalance(balanceId: ID!, delta: Int!, notes: String!): DogPackageBalance!
+
+  """Soft delete. Reservation history is preserved."""
+  archiveDog(id: ID!): Dog!
+
+  """Soft delete. Past reservations keep their price snapshots."""
+  archiveService(id: ID!): Service!
+  cancelDogPackage(id: ID!, reason: String): DogPackage!
+
+  """Frees the dates and voids the charges. Never deletes billing history."""
+  cancelReservation(id: ID!, reason: String): Reservation!
+  changeMemberRole(from: MembershipRole!, to: MembershipRole!, userId: ID!): CompanyMembership!
+  changePassword(input: ChangePasswordInput!): Boolean!
+
+  """
+  Records the arrival. The hour is judged HERE, not at booking: until the dog
+  turns up nobody knows when that was. An arrival outside opening hours is
+  never refused — it is recorded on the event log. `at` is for registering a
+  drop-off that happened earlier.
+  """
+  checkInReservation(at: DateTime, id: ID!): Reservation!
+
+  """
+  Records the departure and, past the service's cutoff, bills a late-checkout
+  day. Evaluated here rather than at booking because until now nobody knew when
+  the dog would actually leave.
+  """
+  checkOutReservation(at: DateTime, id: ID!): Reservation!
+
+  """
+  Resets the password and invalidates every existing session for that user.
+  """
+  confirmPasswordReset(input: ConfirmPasswordResetInput!): Boolean!
+
+  """
+  Registers a business and makes the caller its OWNER.
+  
+  Available to any authenticated user with no company yet — this is how a new
+  business onboards. It replaces createCompanyWithOwner, which created the
+  owner account too and could be called by anyone.
+  """
+  createCompany(input: CreateCompanyInput!): Company!
+  createDog(input: CreateDogInput!): Dog!
+
+  """Captures a marketing lead from the public site."""
+  createLead(input: CreateLeadInput!): Boolean!
+  createPackage(input: CreatePackageInput!): Package!
+  createPriceException(input: CreatePriceExceptionInput!): ServicePriceException!
+  createReservation(input: CreateReservationInput!): Reservation!
+  createService(input: CreateServiceInput!): Service!
+
+  """Public signup. Creates an account with no company membership."""
+  createUser(input: CreateUserInput!): CreatedUser!
+  deactivatePackage(id: ID!): Package!
+  deletePriceException(id: ID!): Boolean!
+  inviteMember(input: InviteMemberInput!): InviteMemberPayload!
+
+  """Ends every session on every device."""
+  logoutAllSessions: LogoutResponse!
+  logoutUser: LogoutResponse!
+
+  """
+  Records that payment was taken outside the platform (the business's card
+  terminal or cash). The platform processes no money; `method` and `reference`
+  (e.g. the terminal's approval code) go to the PAYMENT_RECORDED event so the
+  reservation can be matched against the terminal's settlement report.
+  """
+  markReservationPaid(id: ID!, method: String, reference: String): Reservation!
+
+  """
+  Sells a package to a dog. Payment, package and balances in one transaction.
+  """
+  purchasePackage(input: PurchasePackageInput!): DogPackage!
+
+  """
+  Exchanges a refresh token for a new pair. The presented token is revoked.
+  """
+  refreshSession(refreshToken: String!): AuthResponse!
+  removeDogContact(id: ID!): Boolean!
+
+  """
+  Renews a purchased package by creating a NEW DogPackage linked to the one it
+  replaces. Balances are never reset: each cycle keeps its own ledger. By
+  default the new cycle starts when the old one ends (or now, if it already
+  ended); startDate overrides that for a renewal agreed on a different date.
+  """
+  renewDogPackage(
+    id: ID!
+
+    """Marks the transaction COMPLETED. Otherwise it stays PENDING."""
+    markPaid: Boolean
+    paymentMethod: PaymentMethod
+    startDate: DateTime
+  ): DogPackage!
+  requestPasswordReset(input: RequestPasswordResetInput!): Boolean!
+
+  """Revokes a membership. The user account itself is untouched."""
+  revokeMembership(role: MembershipRole!, userId: ID!): CompanyMembership!
+  signUser(input: SignInUserInput!): AuthResponse!
+  updateCompany(input: UpdateCompanyInput!): Company!
+  updateDog(id: ID!, input: UpdateDogInput!): Dog!
+
+  """
+  Per-business notes. Never visible to another company boarding the same dog.
+  """
+  updateDogCompanyNotes(id: ID!, notes: String!): Dog!
+  updatePriceException(id: ID!, input: UpdatePriceExceptionInput!): ServicePriceException!
+  updateService(id: ID!, input: UpdateServiceInput!): Service!
+  updateUser(input: UpdateUserInput!): User!
+  uploadDogImage(file: Upload!, id: ID!): Dog!
+  verifyEmail(token: String!): AuthResponse!
+}
+
+"""How full a service is on a date. Drives the availability calendar."""
+type OccupancyCount {
+  booked: Int!
+  capacity: Int
+  date: DateTime!
+}
+
+enum OccupancyKind {
+  """A dated day of attendance: daycare, or a billed late-checkout day."""
+  DAY
+
+  """An overnight stay. The departure date is not a NIGHT."""
+  NIGHT
+}
+
+enum OccupancySourceType {
+  DIRECT
+  EXCEPTION
+  PACKAGE
+  PACKAGE_WITH_EXCEPTION
+}
+
+type Package {
+  active: Boolean!
+
+  """Only on SUBSCRIPTION packages. Each renewal creates a new DogPackage."""
+  billingCycle: BillingCycle
+  createdAt: DateTime!
+  description: String
+  id: ID!
+
+  """
+  The services it includes. Bounded by the domain: a handful per package.
+  """
+  items: [PackageItem!]!
+  name: String!
+  price: Money!
+  type: PackageType!
+
+  """Days of validity from purchase. Null means it never expires."""
+  validityDays: Int
+}
+
+type PackageItem {
+  """Days of the week this service is covered. 7-bit mask, bit 0 = Sunday."""
+  daysMask: Int!
+  id: ID!
+
+  """
+  Null means unlimited. Per item, so one package can mix a fixed allowance of
+  one service with unlimited use of another.
+  """
+  quantity: Int
+  service: Service!
+}
+
+input PackageItemInput {
+  """7-bit mask, bit 0 = Sunday. Defaults to 127 (every day)."""
+  daysMask: Int
+
+  """
+  Omit for unlimited. Per item: fixed and unlimited services can coexist.
+  """
+  quantity: Int
+  serviceId: ID!
+}
+
+"""
+Append-only record of balance movements. Without it, usedQuantity is a number
+nobody can explain.
+"""
+type PackageLedgerEntry {
+  actor: User
+  createdAt: DateTime!
+
+  """Negative when consumed, positive when returned."""
+  delta: Int!
+  id: ID!
+  notes: String
+  reason: LedgerReason!
+}
+
+enum PackageType {
+  """Fixed number of sessions. Balances track what remains."""
+  QUANTITY
+
+  """Recurring. Renews on a billing cycle."""
+  SUBSCRIPTION
+
+  """
+  Unlimited use within the validity window. Usage is recorded, never blocked.
+  """
+  UNLIMITED
+}
+
+enum PaymentMethod {
+  CARD
+  CASH
+  OTHER
+  TRANSFER
+}
+
+enum PaymentStatus {
+  PAID
+  PARTIALLY_PAID
+  REFUNDED
+  UNPAID
+}
+
+enum PricingUnit {
+  DAILY
+  HOURLY
+  NIGHTLY
+  PACKAGE
+  SESSION
+}
+
+input PurchasePackageInput {
+  dogId: ID!
+
+  """Marks the transaction COMPLETED. Otherwise it stays PENDING."""
+  markPaid: Boolean
+  packageId: ID!
+  paymentMethod: PaymentMethod
+}
+
+type Query {
+  _empty: String
+
+  """
+  Customers of the active company. Staff-only: this is the client list.
+  Replaces `companyDogOwners`, which took companyId as an argument and
+  verified nothing.
+  """
+  companyClients(after: String, first: Int = 25, search: String): [User!]!
+
+  """Members of the active company, optionally filtered by role."""
+  companyMembers(role: MembershipRole): [CompanyMembership!]!
+
+  """Staff of the active company."""
+  companyStaff: [User!]!
+
+  """
+  Which balance, if any, would cover this service on this date. Answers "is
+  this night already paid for" before booking.
+  """
+  coveringBalance(date: DateTime!, dogId: ID!, serviceId: ID!): DogPackageBalance
+  dog(id: ID!): Dog
+
+  """Packages a dog holds. Clients may only ask about their own dogs."""
+  dogPackages(activeOnly: Boolean = true, dogId: ID!): [DogPackage!]!
+
+  """
+  Dogs of the active company. Staff see all of them; a client sees only their
+  own, so the same field is safe for both audiences.
+  """
+  dogs(first: Int = 50, search: String): [Dog!]!
+
+  """What a service costs on one date, after price exceptions."""
+  effectivePrice(date: DateTime!, serviceId: ID!): EffectivePrice!
+
+  """What each date in a range costs. Use this to quote a stay."""
+  effectivePriceRange(from: DateTime!, serviceId: ID!, to: DateTime!): [EffectivePrice!]!
+  guestStats(date: DateTime): GuestStats!
+
+  """The authenticated user."""
+  me: User
+
+  """Every company the caller is a member of, for a company switcher."""
+  myCompanies: [Company!]!
+
+  """The company this request is scoped to."""
+  myCompany: Company
+
+  """Dogs owned by the authenticated user."""
+  myDogs: [Dog!]!
+
+  """How full a service is across a range."""
+  occupancy(from: DateTime!, serviceId: ID!, to: DateTime!): [OccupancyCount!]!
+  package(id: ID!): Package
+
+  """Packages the active company sells."""
+  packages(activeOnly: Boolean = true): [Package!]!
+
+  """What each dog still owes, largest first."""
+  pendingPayments: [DogBalance!]!
+  priceExceptions(activeOnly: Boolean = true, serviceId: ID): [ServicePriceException!]!
+
+  """
+  Price a booking before making it. Runs every validation the real one does.
+  """
+  quoteReservation(input: CreateReservationInput!): ReservationQuote!
+  reservation(id: ID!): Reservation
+
+  """
+  Reservations of the active company. Staff see all of them; a client sees only
+  their own dogs', so the same field serves both.
+  """
+  reservations(filter: ReservationFilter, first: Int = 50): [Reservation!]!
+
+  """Arrivals and departures for a date. The daily operations board."""
+  reservationsOn(date: DateTime!): [Reservation!]!
+  revenueStats(date: DateTime): RevenueStats!
+  service(id: ID!): Service
+
+  """Whether a service runs at all on a date. Availability, not price."""
+  serviceAvailability(date: DateTime!, serviceId: ID!): ServiceAvailability!
+
+  """Services offered by the active company."""
+  services(status: ServiceStatus, type: ServiceType): [Service!]!
+}
+
+type QuotedAddOn {
+  """
+  True when a package balance covers this add-on and it is billed at zero.
+  """
+  coveredByPackage: Boolean!
+  price: Money!
+  service: Service!
+}
+
+input RequestPasswordResetInput {
+  email: String!
+}
+
+type Reservation {
+  """What actually happened. These settle a billing dispute."""
+  actualCheckInAt: DateTime
+  actualCheckOutAt: DateTime
+  checkedInBy: User
+  checkedOutBy: User
+  createdAt: DateTime!
+  dog: Dog!
+
+  """Append-only history: who checked the dog in, who cancelled, when."""
+  events: [ReservationEvent!]!
+  id: ID!
+
+  """Charge lines. Voided lines are excluded unless includeVoided is set."""
+  items(includeVoided: Boolean = false): [ReservationItem!]!
+  notes: String
+
+  """Dates this reservation occupies."""
+  occupancy: [ReservationOccupancy!]!
+  paymentStatus: PaymentStatus!
+
+  """What the customer booked."""
+  scheduledCheckIn: DateTime!
+  scheduledCheckOut: DateTime
+  status: ReservationStatus!
+
+  """Sum of non-voided lines."""
+  total: Money!
+}
+
+type ReservationEvent {
+  actor: User
+  id: ID!
+  notes: String
+  occurredAt: DateTime!
+  type: ReservationEventType!
+}
+
+enum ReservationEventType {
+  CANCELLED
+  CHECKED_IN
+  CHECKED_OUT
+  COMPLETED
+  CREATED
+  ITEM_ADDED
+  ITEM_VOIDED
+  NOTE_ADDED
+  NO_SHOW
+  PAYMENT_RECORDED
+  REFUND_ISSUED
+  UPDATED
+}
+
+input ReservationFilter {
+  dogId: ID
+  from: DateTime
+  serviceId: ID
+  status: ReservationStatus
+  to: DateTime
+}
+
+type ReservationItem {
+  currency: String!
+  discountReason: String
+  id: ID!
+  kind: ReservationItemKind!
+
+  """Snapshot of the service name at the time of sale."""
+  name: String!
+
+  """The date this line pays for. Null for add-ons, fees and discounts."""
+  occupancy: ReservationOccupancy
+  quantity: Int!
+  service: Service
+  sourceType: ReservationItemSourceType!
+  totalPrice: Money!
+  unitPrice: Money!
+  voidedAt: DateTime
+}
+
+enum ReservationItemKind {
+  ADDON
+  DISCOUNT
+  FEE
+  MAIN
+}
+
+enum ReservationItemSourceType {
+  DIRECT
+  EXCEPTION
+  PACKAGE
+}
+
+type ReservationOccupancy {
+  date: DateTime!
+  id: ID!
+
+  """The charge for this date, if there is one."""
+  item: ReservationItem
+  kind: OccupancyKind!
+  priceException: ServicePriceException
+  service: Service!
+  sourceType: OccupancySourceType!
+}
+
+"""
+What a booking would cost, priced exactly as it will be billed — the same code
+path, so the quote cannot drift from the invoice.
+"""
+type ReservationQuote {
+  addOns: [QuotedAddOn!]!
+
+  """
+  What the customer actually pays after package coverage. A stay can mix both:
+  nights inside the package's covered days come from the balance, the rest are
+  billed cash.
+  """
+  amountDue: Money!
+
+  """Dates a package balance will cover, decided per date at booking."""
+  coveredDates: [DateTime!]!
+
+  """One entry per occupied date, with the exception that applied, if any."""
+  dates: [EffectivePrice!]!
+  service: Service!
+  subtotal: Money!
+
+  """Everything, priced as if no package existed."""
+  total: Money!
+
+  """Conditions accepted rather than refused, surfaced for staff to see."""
+  warnings: [String!]!
+}
+
+enum ReservationStatus {
+  CANCELLED
+  CHECKED_IN
+  CHECKED_OUT
+  COMPLETED
+  NO_SHOW
+  PENDING
+}
+
+type RevenueByServiceType {
+  amount: Money!
+  serviceType: String!
+}
+
+type RevenueStats {
+  byServiceType: [RevenueByServiceType!]!
+  paid: Money!
+
+  """Owed from before today. What the front desk should be chasing."""
+  previousUnpaid: Money!
+  total: Money!
+  unpaid: Money!
+}
+
+type Service {
+  """Maximum dogs on a single date. Null means unlimited."""
+  capacity: Int
+  category: ServiceCategory!
+
+  """HOTEL only. Minute of day for free collection on the departure day."""
+  checkoutCutoffMinute: Int
+  closesAtMinute: Int!
+  createdAt: DateTime!
+
+  """Inherited from the company. Services do not price in mixed currencies."""
+  currency: String!
+
+  """7-bit mask. Bit 0 = Sunday. 127 = every day."""
+  daysMask: Int!
+
+  """Days this service runs, expanded from daysMask for convenience."""
+  daysOfWeek: [DayOfWeek!]!
+  description: String
+  durationMinutes: Int!
+  id: ID!
+
+  """
+  What is billed when a dog is collected after the cutoff — normally the
+  daycare service. Because it is an ordinary service line, package coverage and
+  price exceptions apply to it automatically.
+  """
+  lateCheckoutService: Service
+  name: String!
+
+  """Minutes from midnight in the company's timezone. 480 = 08:00."""
+  opensAtMinute: Int!
+  price: Money!
+  priceExceptions: [ServicePriceException!]!
+  pricingUnit: PricingUnit!
+  status: ServiceStatus!
+  type: ServiceType!
+}
+
+type ServiceAvailability {
+  bookable: Boolean!
+  reason: String
+}
+
+enum ServiceCategory {
+  """An extra billed alongside a MAIN item: swimming, extra playtime."""
+  ADDON
+
+  """A primary service: a stay, a day of daycare, a grooming session."""
+  MAIN
+}
+
+type ServicePriceException {
+  active: Boolean!
+
+  """When true, package balances may not be spent on these dates."""
+  blockPackageUse: Boolean!
+  daysMask: Int!
+  description: String
+  endDate: DateTime!
+  id: ID!
+
+  """
+  When true, startDate and endDate bound the SEASON within which daysMask
+  repeats — so "weekend surcharge, all of 2026" is one row, not 104.
+  """
+  isRecurring: Boolean!
+  name: String!
+
+  """Highest wins when two exceptions overlap. Ties break on most recent."""
+  priority: Int!
+
+  """Short machine-readable motive: HIGH_SEASON, HOLIDAY, WEEKEND."""
+  reason: String
+
+  """When true, no discount line may be applied on these dates."""
+  requireFullPrice: Boolean!
+  service: Service!
+  specialPrice: Money!
+  startDate: DateTime!
+}
+
+enum ServiceStatus {
+  ACTIVE
+  ARCHIVED
+  INACTIVE
+}
+
+enum ServiceType {
+  DAYCARE
+  GROOMING
+  HOTEL
+  TRAINING
+}
+
+input SignInUserInput {
+  email: String!
+  password: String!
+}
+
+input UpdateCompanyInput {
+  address: AddressInput
+  email: String
+  logoUrl: String
+  name: String
+  phone: String
+  timezone: String
+}
+
+input UpdateDogInput {
+  birthDate: DateTime
+  breed: String
+  color: String
+  gender: Gender
+  name: String
+  notes: String
+  size: DogSize
+  weightKg: String
+}
+
+input UpdatePriceExceptionInput {
+  active: Boolean
+  blockPackageUse: Boolean
+  daysMask: Int
+  description: String
+  endDate: DateTime
+  isRecurring: Boolean
+  name: String
+  priority: Int
+  reason: String
+  requireFullPrice: Boolean
+  specialPrice: Money
+  startDate: DateTime
+}
+
+input UpdateServiceInput {
+  capacity: Int
+  checkoutCutoffMinute: Int
+  closesAtMinute: Int
+  daysMask: Int
+  description: String
+  durationMinutes: Int
+  lateCheckoutServiceId: ID
+  name: String
+  opensAtMinute: Int
+  price: Money
+  pricingUnit: PricingUnit
+  status: ServiceStatus
+}
+
+"""
+Self-service profile edits only.
+
+`companyId` and `clientOfId` used to be accepted here, which let any user
+attach themselves to any company — privilege escalation in one mutation.
+Membership changes now go through inviteMember / revokeMembership, which are
+role-gated. `password` is not here either: changing it requires the current
+password, so it has its own mutation.
+"""
+input UpdateUserInput {
+  birthDate: DateTime
+  gender: Gender
+  lastname: String
+  name: String
+  phone: String
+}
+
+"""File upload, used by the dog image mutations."""
+scalar Upload
+
+type User {
+  birthDate: DateTime
+  createdAt: DateTime!
+
+  """Dogs this user owns."""
+  dogs: [Dog!]!
+  email: String!
+  emailVerifiedAt: DateTime
+  gender: Gender
+  id: ID!
+  lastname: String
+
+  """Memberships visible to the caller, scoped to their company."""
+  memberships: [CompanyMembership!]!
+  name: String
+  phone: String
+  profilePicture: String
+  status: UserStatus!
+}
+
+"""Lifecycle of a user account, independent of any company membership."""
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+  DELETED
+  INACTIVE
+
+  """Registered but email not yet verified."""
+  INCOMPLETE
+}

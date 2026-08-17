@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@apollo/client/react";
-import { DOG_BY_ID } from "@/lib/api/dogs.api";
-import type { Dog, User } from "@/types/Dog";
+import { DOG_QUERY } from "@/graphql/operations/dogs";
+import { mapDogToLegacy } from "@/utils/adapters";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { DogBasicInfoFormValues } from "@/components/Form/Forms/DogBasicInfoForm";
@@ -16,14 +16,6 @@ import {
   // DogQuickStatsSection,
   DogProfileSkeleton,
 } from "./components";
-
-interface DogDetailOwner extends Omit<User, "password"> {
-  birthDate?: string;
-}
-
-interface DogDetail extends Omit<Dog, "owner"> {
-  owner?: DogDetailOwner | null;
-}
 
 // Mock data for sections not yet from API
 // const mockMedicalInfo = {
@@ -63,12 +55,12 @@ const DogProfile = () => {
   const { dogId } = useParams<{ dogId: string }>();
   const navigate = useNavigate();
 
-  const { data, loading, error } = useQuery<{ dogById: DogDetail }>(DOG_BY_ID, {
-    variables: { dogByIdId: Number(dogId) },
+  const { data, loading, error } = useQuery(DOG_QUERY, {
+    variables: { id: dogId ?? "" },
     skip: !dogId,
   });
 
-  const dog = data?.dogById;
+  const dog = data?.dog ? mapDogToLegacy(data.dog) : undefined;
   const owner = dog?.owner;
 
   // Memoize form default values to prevent unnecessary re-renders

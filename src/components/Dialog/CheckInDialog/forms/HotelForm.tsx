@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import { useMutation } from "@apollo/client/react";
+import { useMutation, useQuery } from "@apollo/client/react";
 import { AlertCircle, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -16,13 +16,18 @@ import {
 } from "@/components/Form";
 import { type Service } from "@/lib/api/services.api";
 import {
-  CREATE_RESERVATION,
-  type CreateReservationResponse,
-  type CreateReservationVariables,
-  type ReservationItemCreateInput,
-} from "@/lib/api/reservations.api";
+  CREATE_RESERVATION_MUTATION,
+  QUOTE_RESERVATION_QUERY,
+  RESERVATIONS_QUERY,
+} from "@/graphql/operations/reservations";
+import { evictReservationCache } from "@/graphql/cache";
 import { formatPrice } from "../constants";
-import { CheckInSummary } from "../components";
+import {
+  ActivePackageBanner,
+  CheckInActionBar,
+  CheckInSummary,
+} from "../components";
+import { useQuoteBreakdown } from "../hooks/useQuoteBreakdown";
 import type { CheckInFormValues } from "../types";
 
 interface HotelFormProps {
@@ -30,9 +35,7 @@ interface HotelFormProps {
   addonServices: Service[];
   dogId: string;
   companyId: number;
-  onSuccess: (
-    reservation: CreateReservationResponse["createReservation"]
-  ) => void;
+  onSuccess: () => void;
   onCancel: () => void;
   onBack: () => void;
 }
@@ -41,15 +44,20 @@ export function HotelForm({
   services,
   addonServices,
   dogId,
-  companyId,
   onSuccess,
   onCancel,
   onBack,
 }: HotelFormProps) {
+  // El servidor calcula noches y precios (excepciones y paquetes incluidos);
+  // el cliente solo manda servicio, extras y fechas.
   const [createReservation, { loading: isSubmitting, error: mutationError }] =
-    useMutation<CreateReservationResponse, CreateReservationVariables>(
-      CREATE_RESERVATION
-    );
+    useMutation(CREATE_RESERVATION_MUTATION, {
+      // Nace PENDING: aparece en "Por llegar", que puede no ser la pestaña
+      // montada, así que no basta con refrescar la activa.
+      refetchQueries: [RESERVATIONS_QUERY],
+      awaitRefetchQueries: true,
+      update: evictReservationCache,
+    });
 
   const form = useForm<CheckInFormValues>({
     defaultValues: {
@@ -81,7 +89,7 @@ export function HotelForm({
   const selectedService = services.find(
     (s) =>
       s.id === selectedServiceId ||
-      (services.length === 1 && s.id === services[0].id)
+      (services.length === 1 && s.id === services[0].id),
   );
 
   // Calculate number of nights
@@ -91,32 +99,45 @@ export function HotelForm({
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   }, [stayDates]);
 
-  // Calculate total
-  const total = useMemo(() => {
-    let sum = 0;
-
-    if (selectedService && numberOfNights > 0) {
-      sum += selectedService.price * numberOfNights;
-    }
-
-    selectedAdditionalServices.forEach((serviceId) => {
-      const addon = addonServices.find((s) => s.id === serviceId);
-      if (addon) {
-        sum += addon.price;
-      }
-    });
-
-    return sum;
-  }, [
-    selectedService,
-    numberOfNights,
-    selectedAdditionalServices,
-    addonServices,
-  ]);
+  // El total lo cotiza el servidor con las mismas reglas del create: noches
+  // (la fecha de salida no es noche), excepciones de precio por fecha, etc.
+  // Compra individual: si el perro tuviera paquete, se aplica solo al crear.
+  const {
+    data: quoteData,
+    loading: quoteLoading,
+    error: quoteQueryError,
+  } = useQuery(
+    QUOTE_RESERVATION_QUERY,
+    {
+      variables: {
+        input: {
+          dogId,
+          serviceId: selectedService?.id ?? "",
+          addOnServiceIds: selectedAdditionalServices,
+          scheduledCheckIn: stayDates?.from?.toISOString() ?? "",
+          scheduledCheckOut: stayDates?.to?.toISOString(),
+        },
+      },
+      skip: !selectedService || !dogId || !stayDates?.from || !stayDates?.to,
+    },
+  );
+  // `total` es la valuación completa; `amountDue` es lo que se cobra ya
+  // descontada la cobertura del paquete, que se decide por fecha.
+  // El CTA se bloquea hasta tener la cotización del servidor: confirmar sin
+  // total cotizado permitiría registrar un importe alterado o desactualizado.
+  const {
+    total,
+    amountDue,
+    coveredDates,
+    coveredAddOnIds,
+    quoteReady,
+    quoteError,
+  } =
+    useQuoteBreakdown(quoteData, quoteLoading, quoteQueryError);
 
   const toggleAdditionalService = (
     serviceId: string,
-    currentServices: string[]
+    currentServices: string[],
   ) => {
     if (currentServices.includes(serviceId)) {
       return currentServices.filter((id) => id !== serviceId);
@@ -139,53 +160,21 @@ export function HotelForm({
     if (!service || !data.dogId || !data.stayDates?.from || !data.stayDates?.to)
       return;
 
-    // Calculate nights for pricing
-    const nights = Math.ceil(
-      (data.stayDates.to.getTime() - data.stayDates.from.getTime()) /
-        (1000 * 60 * 60 * 24)
-    );
-
-    // Build reservation items
-    const items: ReservationItemCreateInput[] = [];
-
-    // Add main service (price per night * number of nights)
-    items.push({
-      serviceId: Number(service.id),
-      name: `${service.name} (${nights} ${nights === 1 ? "noche" : "noches"})`,
-      quantity: nights,
-      unitPrice: service.price,
-      totalPrice: service.price * nights,
-      kind: "MAIN",
-    });
-
-    // Add additional services as ADDONs
-    data.additionalServices.forEach((additionalServiceId) => {
-      const addon = addonServices.find((s) => s.id === additionalServiceId);
-      if (addon) {
-        items.push({
-          serviceId: Number(addon.id),
-          name: addon.name,
-          quantity: 1,
-          unitPrice: addon.price,
-          totalPrice: addon.price,
-          kind: "ADDON",
-        });
-      }
-    });
-
     try {
       const result = await createReservation({
         variables: {
-          dogId: Number(data.dogId),
-          companyId,
-          items,
-          checkIn: data.stayDates.from.toISOString(),
-          checkOut: data.stayDates.to.toISOString(),
+          input: {
+            dogId: data.dogId,
+            serviceId: service.id,
+            addOnServiceIds: data.additionalServices,
+            scheduledCheckIn: data.stayDates.from.toISOString(),
+            scheduledCheckOut: data.stayDates.to.toISOString(),
+          },
         },
       });
 
       if (result.data?.createReservation) {
-        onSuccess(result.data.createReservation);
+        onSuccess();
       }
     } catch (error) {
       console.error("Error creating reservation:", error);
@@ -203,6 +192,17 @@ export function HotelForm({
           </span>
         </div>
       )}
+
+      {/* Saberlo ANTES de elegir fechas es lo que permite decidir: "las
+          noches son L–J, el viernes se cobra". Se filtra a los servicios de
+          este paso para no anunciar saldo que no aplica. */}
+      <ActivePackageBanner
+        dogId={dogId}
+        serviceIds={[
+          ...services.map((s) => s.id),
+          ...addonServices.map((s) => s.id),
+        ]}
+      />
 
       {/* 1. Date Range Selection */}
       <FormField<CheckInFormValues, "stayDates">
@@ -226,7 +226,7 @@ export function HotelForm({
                 placeholderTo="Check-out"
                 value={field.value}
                 onChange={field.onChange}
-                minDate={new Date()}
+                minDate={new Date(new Date().setHours(0, 0, 0, 0))}
                 numberOfMonths={2}
               />
             </FormControl>
@@ -259,7 +259,7 @@ export function HotelForm({
                       onClick={() => field.onChange(service.id)}
                       className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
                         field.value === service.id
-                          ? "border-[#A3C585] bg-[#A3C585]/10"
+                          ? "border-brand-border bg-brand-tint"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                     >
@@ -272,7 +272,7 @@ export function HotelForm({
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-[#A3C585]">
+                          <p className="font-semibold text-brand-strong">
                             {formatPrice(service.price)}
                           </p>
                           <p className="text-xs text-gray-500">por noche</p>
@@ -290,7 +290,7 @@ export function HotelForm({
 
       {/* Auto-selected service display for single service */}
       {services.length === 1 && (
-        <div className="p-4 rounded-xl border-2 border-[#A3C585] bg-[#A3C585]/10">
+        <div className="p-4 rounded-xl border-2 border-brand-border bg-brand-tint">
           <div className="flex justify-between items-center">
             <div>
               <p className="font-medium">{services[0].name}</p>
@@ -300,7 +300,7 @@ export function HotelForm({
               </p>
             </div>
             <div className="text-right">
-              <p className="font-semibold text-[#A3C585]">
+              <p className="font-semibold text-brand-strong">
                 {formatPrice(services[0].price)}
               </p>
               <p className="text-xs text-gray-500">por noche</p>
@@ -325,7 +325,7 @@ export function HotelForm({
                       key={addon.id}
                       className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
                         field.value.includes(addon.id)
-                          ? "border-[#A3C585] bg-[#A3C585]/10"
+                          ? "border-brand-border bg-brand-tint"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                     >
@@ -333,14 +333,14 @@ export function HotelForm({
                         checked={field.value.includes(addon.id)}
                         onCheckedChange={() =>
                           field.onChange(
-                            toggleAdditionalService(addon.id, field.value)
+                            toggleAdditionalService(addon.id, field.value),
                           )
                         }
-                        className="data-[state=checked]:bg-[#A3C585] data-[state=checked]:border-[#A3C585]"
+                        className="data-[state=checked]:bg-brand data-[state=checked]:border-brand"
                       />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <Plus className="w-4 h-4 text-[#A3C585]" />
+                          <Plus className="w-4 h-4 text-brand-strong" />
                           <span className="font-medium">{addon.name}</span>
                         </div>
                         <p className="text-sm text-gray-500">
@@ -349,7 +349,7 @@ export function HotelForm({
                             : `${addon.startTime} - ${addon.endTime}`}
                         </p>
                       </div>
-                      <span className="font-semibold text-[#A3C585]">
+                      <span className="font-semibold text-brand-strong">
                         +{formatPrice(addon.price)}
                       </span>
                     </label>
@@ -370,11 +370,20 @@ export function HotelForm({
         selectedAdditionalServices={selectedAdditionalServices}
         addonServices={addonServices}
         total={total}
+        amountDue={amountDue}
+        coveredDates={coveredDates}
+        coveredAddOnIds={coveredAddOnIds}
         numberOfNights={numberOfNights}
       />
 
-      {/* Actions */}
-      <div className="flex gap-3 pt-2">
+      {/* Acciones: fijas al pie junto con el importe, para que ni el precio
+          ni el botón queden bajo el pliegue en pantallas bajas. */}
+      <CheckInActionBar
+        amountDue={amountDue}
+        total={total}
+        quoteError={quoteError}
+      >
+        <div className="flex gap-3">
         <Button
           type="button"
           variant="outline"
@@ -386,25 +395,30 @@ export function HotelForm({
         <Button
           type="submit"
           className="flex-1 rounded-full bg-[#3D2E1E] hover:bg-[#2D1E0E] text-white"
-          disabled={isSubmitting || !isFormValid()}
+          disabled={isSubmitting || !isFormValid() || !quoteReady}
         >
           {isSubmitting ? (
             <>
               <Spinner /> Procesando...
             </>
+          ) : quoteLoading ? (
+            <>
+              <Spinner /> Cotizando...
+            </>
           ) : (
             "Confirmar Reservación"
           )}
+          </Button>
+        </div>
+        <Button
+          type="button"
+          variant="link"
+          className="w-full rounded-full h-8 mt-1"
+          onClick={onCancel}
+        >
+          Cancelar
         </Button>
-      </div>
-      <Button
-        type="button"
-        variant="link"
-        className="w-full rounded-full"
-        onClick={onCancel}
-      >
-        Cancelar
-      </Button>
+      </CheckInActionBar>
     </Form>
   );
 }

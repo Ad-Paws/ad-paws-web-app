@@ -1,21 +1,56 @@
+import { useMemo } from "react";
 import MiniInsightCard from "@/components/Dashboard/MiniInsightCard";
 
 import { Calculator, HeartPulse, UserPlus, UsersIcon } from "lucide-react";
-import OwnersTable, { type Owner } from "./OwnersTable";
-import { GET_OWNERS_QUERY } from "@/lib/api/user.api";
+import OwnersTable, { type Owner, type OwnerDog } from "./OwnersTable";
+import { COMPANY_CLIENTS_QUERY } from "@/graphql/operations/clients";
+import { DOGS_QUERY } from "@/graphql/operations/dogs";
 import { useQuery } from "@apollo/client/react";
-import { useAuth } from "@/contexts/AuthContext";
 
 const Owners = () => {
-  const { company } = useAuth();
-  const { data, loading } = useQuery<{ companyDogOwners: Owner[] }>(
-    GET_OWNERS_QUERY,
-    {
-      variables: { companyId: Number(company?.id) },
-    },
+  // companyClients ya no anida perros (User.dogs no está paginado y el límite
+  // de costo del backend rechaza lista × lista): se piden por separado y se
+  // agrupan por primaryOwner aquí.
+  const { data: clientsData, loading: clientsLoading } = useQuery(
+    COMPANY_CLIENTS_QUERY,
+    { variables: { first: 100 } },
   );
+  const { data: dogsData, loading: dogsLoading } = useQuery(DOGS_QUERY, {
+    variables: { first: 200 },
+  });
 
-  const owners = data?.companyDogOwners ?? [];
+  const loading = clientsLoading || dogsLoading;
+
+  const owners = useMemo<Owner[]>(() => {
+    const dogsByOwner = new Map<string, OwnerDog[]>();
+    for (const dog of dogsData?.dogs ?? []) {
+      const ownerId = dog.primaryOwner?.id;
+      if (!ownerId) continue;
+      const list = dogsByOwner.get(ownerId) ?? [];
+      list.push({
+        id: dog.id,
+        imageUrl: dog.imageUrl ?? null,
+        lastVisitAt: dog.companyProfile?.lastVisitAt ?? null,
+        breed: dog.breed ?? "",
+        color: dog.color ?? "",
+        name: dog.name,
+        size: dog.size,
+        weight: dog.weightKg ? Number.parseFloat(dog.weightKg) || 0 : 0,
+        gender: dog.gender ?? "",
+        birthDate: dog.birthDate ?? "",
+      });
+      dogsByOwner.set(ownerId, list);
+    }
+
+    return (clientsData?.companyClients ?? []).map((client) => ({
+      id: client.id,
+      profilePicture: client.profilePicture ?? null,
+      email: client.email,
+      phone: client.phone ?? "",
+      status: client.status,
+      dogs: dogsByOwner.get(client.id) ?? [],
+    }));
+  }, [clientsData?.companyClients, dogsData?.dogs]);
   const activeOwners = owners.filter((o) => o.status === "ACTIVE").length;
   const totalDogs = owners.reduce((sum, o) => sum + o.dogs.length, 0);
   const avgDogsPerOwner =

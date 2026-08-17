@@ -23,7 +23,7 @@ const DogMedicalInfoSection = ({ medicalInfo }: DogMedicalInfoSectionProps) => {
           </div>
           <h3 className="text-lg font-semibold">Información Médica</h3>
         </div>
-        <button className="text-sm text-[#A3C585] hover:underline flex items-center gap-1">
+        <button className="text-sm text-brand-strong hover:underline flex items-center gap-1">
           <Plus className="w-4 h-4" />
           Add Record
         </button>

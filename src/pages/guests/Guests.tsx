@@ -1,22 +1,20 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import MiniInsightCard from "@/components/Dashboard/MiniInsightCard";
 import PetCard from "@/components/PetCard";
 import {
+  CalendarClock,
   CheckIcon,
   PawPrintIcon,
   StarIcon,
-  SyringeIcon,
   Grid3x3,
   List,
 } from "lucide-react";
-import { COMPANY_DOGS } from "@/lib/api/dogs.api";
-import { useAuth } from "@/contexts/AuthContext";
+import { DOGS_QUERY } from "@/graphql/operations/dogs";
+import { GUEST_STATS_QUERY } from "@/graphql/operations/stats";
+import { mapDogToLegacy } from "@/utils/adapters";
 import { useQuery } from "@apollo/client/react";
-import type { Dog } from "@/types/Dog";
 import PetCardSkeleton from "@/components/PetCardSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
-import { GET_GUEST_STATS } from "@/lib/api/stats.api";
-import type { GuestsStats } from "@/types/Stats";
 import { formatAgeFromBirthDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import GuestListView from "./components/GuestListView";
@@ -24,15 +22,19 @@ import GuestListView from "./components/GuestListView";
 type ViewMode = "grid" | "list";
 
 const Guests = () => {
-  const { company } = useAuth();
   const [viewMode, setViewMode] = useState<ViewMode>("list");
 
-  const { data, loading } = useQuery<{ companyDogs: Dog[] }>(COMPANY_DOGS, {
-    variables: { companyId: Number(company?.id) },
+  const { data, loading } = useQuery(DOGS_QUERY, {
+    variables: { first: 50 },
   });
-  const { data: statsData, loading: statsLoading } = useQuery<{
-    guestsStats: GuestsStats;
-  }>(GET_GUEST_STATS);
+  const { data: statsData, loading: statsLoading } =
+    useQuery(GUEST_STATS_QUERY);
+
+  const dogs = useMemo(
+    () => (data?.dogs ?? []).map(mapDogToLegacy),
+    [data?.dogs],
+  );
+  const stats = statsData?.guestStats;
 
   return (
     <div className="h-full px-6 py-4 overflow-auto">
@@ -87,31 +89,33 @@ const Guests = () => {
         <div className="grid grid-cols-4 gap-4 mb-8">
           <MiniInsightCard
             title="Peks registrados"
-            data={statsData?.guestsStats?.totalDogs || 0}
+            data={stats?.totalDogs || 0}
             mainIcon={PawPrintIcon}
             iconBackgroundColor="#F5F0E8"
             iconColor="#8B7355"
             iconFill="#8B7355"
           />
           <MiniInsightCard
-            title="Check-In hoy"
-            data={statsData?.guestsStats?.todayCheckedInDogs || 0}
+            title="En instalaciones"
+            data={stats?.checkedInNow || 0}
             mainIcon={CheckIcon}
             iconBackgroundColor="#E4F0E4"
             iconColor="#4CAF50"
             iconFill="none"
           />
+          {/* "Vacunas vencidas" se retiró: el backend eliminó pastDueVaccines
+              (no existe modelo de vacunas todavía). */}
           <MiniInsightCard
-            title="Vacunas vencidas"
-            data={statsData?.guestsStats?.pastDueVaccines || 0}
-            mainIcon={SyringeIcon}
+            title="Llegadas hoy"
+            data={stats?.arrivingToday || 0}
+            mainIcon={CalendarClock}
             iconBackgroundColor="#FCE4E4"
             iconColor="#E57373"
             iconFill="none"
           />
           <MiniInsightCard
             title="NUEVOS ESTE MES"
-            data={statsData?.guestsStats?.newDogsDuringMonth || 0}
+            data={stats?.newDogsThisMonth || 0}
             mainIcon={StarIcon}
             iconBackgroundColor="#EFF6FF"
             iconColor="#C5DAEF"
@@ -127,7 +131,7 @@ const Guests = () => {
             ? Array.from({ length: 4 }).map((_, index) => (
                 <PetCardSkeleton key={index} />
               ))
-            : data?.companyDogs?.map((dog: Dog) => (
+            : dogs.map((dog) => (
                 <PetCard
                   key={dog.id}
                   dogId={dog.id || undefined}
@@ -142,7 +146,7 @@ const Guests = () => {
               ))}
         </div>
       ) : (
-        <GuestListView dogs={data?.companyDogs || []} loading={loading} />
+        <GuestListView dogs={dogs} loading={loading} />
       )}
     </div>
   );

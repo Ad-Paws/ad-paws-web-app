@@ -10,13 +10,16 @@ import ClientSignupStep2Form, {
 import ClientSignupStep3Form from "@/components/Form/Forms/ClientSignupStep3Form";
 import SignupSuccessScreen from "@/components/Form/Forms/SignupSuccessScreen";
 import { useMutation } from "@apollo/client/react";
-import { CREATE_USER_CLIENT } from "@/lib/api/user.api";
-import { CREATE_USER_DOGS } from "@/lib/api/dogs.api";
+import { CREATE_USER_MUTATION } from "@/graphql/operations/account";
+import {
+  CREATE_DOG_MUTATION,
+  UPLOAD_DOG_IMAGE_MUTATION,
+} from "@/graphql/operations/dogs";
 import mainImage from "@/assets/main_image.png";
 import dogDetails from "@/assets/dog_details.png";
 import reviewImage from "@/assets/review_details.png";
 import successImage from "@/assets/success.png";
-import { translateDogFormToBody } from "@/utils/translators";
+import { translateDogFormToCreateDogInput } from "@/utils/translators";
 
 const TOTAL_STEPS = 3;
 
@@ -50,36 +53,9 @@ const ClientSignup = () => {
   const [formData, setFormData] = useState<SignupFormData>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [createUserDogs] = useMutation(CREATE_USER_DOGS, {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onCompleted(data: any) {
-      console.log("Dogs created:", data);
-      setIsSubmitting(false);
-      setIsSuccess(true);
-    },
-    onError(error) {
-      console.error("Error creating dogs:", error);
-      setIsSubmitting(false);
-    },
-  });
-  const [createUserClient] = useMutation(CREATE_USER_CLIENT, {
-    onCompleted: (createdUser: unknown) => {
-      console.log("User created:", createdUser);
-      createUserDogs({
-        variables: {
-          input: {
-            dogs: formData.dogs?.map((dog) => {
-              return translateDogFormToBody(
-                dog,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                parseInt((createdUser as any)?.createUser?.user?.id)
-              );
-            }),
-          },
-        },
-      });
-    },
-  });
+  const [createUserClient] = useMutation(CREATE_USER_MUTATION);
+  const [createDog] = useMutation(CREATE_DOG_MUTATION);
+  const [uploadDogImage] = useMutation(UPLOAD_DOG_IMAGE_MUTATION);
 
   const handleStep1Submit = (data: ClientSignupStep1Values) => {
     setFormData((prev) => ({ ...prev, step1: data }));
@@ -92,18 +68,48 @@ const ClientSignup = () => {
   };
 
   const handleConfirm = async () => {
+    const { step1: userData } = formData;
+    if (!userData) return;
+
     setIsSubmitting(true);
     try {
-      const { step1: userData } = formData;
-      const userBody = {
-        ...userData,
-        birthDate: userData?.birthdate?.toISOString(),
-      };
-      delete userBody.birthdate;
-      createUserClient({ variables: { input: userBody } });
-      setIsSubmitting(true);
+      // createUser crea la cuenta y la cookie de sesión; los perros se
+      // registran después uno por uno (createDog es singular en el schema
+      // nuevo) y el cliente autenticado siempre queda como dueño.
+      await createUserClient({
+        variables: {
+          input: {
+            name: userData.name,
+            lastname: userData.lastname,
+            email: userData.email,
+            password: userData.password,
+            phone: userData.phone || undefined,
+            birthDate: userData.birthdate?.toISOString(),
+            gender: userData.gender
+              ? (userData.gender.toUpperCase() as "FEMALE" | "MALE" | "OTHER")
+              : undefined,
+          },
+        },
+      });
+
+      for (const dog of formData.dogs ?? []) {
+        const { data: created } = await createDog({
+          variables: { input: translateDogFormToCreateDogInput(dog) },
+        });
+        if (dog.photo && created?.createDog.id) {
+          // La foto es una mutation aparte; si falla no bloquea el registro.
+          await uploadDogImage({
+            variables: { id: created.createDog.id, file: dog.photo },
+          }).catch((error) => {
+            console.error("Failed to upload dog photo:", error);
+          });
+        }
+      }
+
+      setIsSuccess(true);
     } catch (error) {
       console.error("Error creating account:", error);
+    } finally {
       setIsSubmitting(false);
     }
   };

@@ -9,15 +9,11 @@ import {
 import { Mail, Phone } from "lucide-react";
 import type { UserStatus } from "@/types/Dog";
 
-export interface OwnerReservation {
-  id: number;
-  createdAt: string;
-}
-
 export interface OwnerDog {
   id: string;
   imageUrl: string | null;
-  reservations: OwnerReservation[];
+  /** Última visita registrada por check-in (DogCompany.lastVisitAt). */
+  lastVisitAt: string | null;
   breed: string;
   color: string;
   name: string;
@@ -60,14 +56,16 @@ const getStatusStyles = (status: UserStatus) => {
 };
 
 const getLastVisit = (dogs: OwnerDog[]): string => {
-  const allReservations = dogs.flatMap((dog) => dog.reservations);
-  if (allReservations.length === 0) return "Sin visitas";
+  const visits = dogs
+    .map((dog) => dog.lastVisitAt)
+    .filter((visit): visit is string => Boolean(visit));
+  if (visits.length === 0) return "Sin visitas";
 
-  const mostRecent = allReservations.reduce((latest, current) =>
-    new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest,
+  const mostRecent = visits.reduce((latest, current) =>
+    new Date(current) > new Date(latest) ? current : latest,
   );
 
-  return new Date(mostRecent.createdAt).toLocaleDateString("es-MX", {
+  return new Date(mostRecent).toLocaleDateString("es-MX", {
     year: "numeric",
     month: "short",
     day: "numeric",

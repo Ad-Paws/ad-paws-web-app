@@ -1,32 +1,25 @@
+import { useMemo } from "react";
 import NiceModal from "@ebay/nice-modal-react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { Helmet } from "react-helmet-async";
 import { UserPlusIcon } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
 import {
-  GET_COMPANY_EMPLOYEES,
-  REMOVE_EMPLOYEE_MUTATION,
-} from "@/lib/api/user.api";
+  COMPANY_MEMBERS_QUERY,
+  REVOKE_MEMBERSHIP_MUTATION,
+} from "@/graphql/operations/team";
 import { showToast } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
 import AddEmployeeModal from "@/components/Dialog/AddEmployeeModal";
 import TeamTable, { type Employee } from "./TeamTable";
 
 export default function Team() {
-  const { company } = useAuth();
-  const companyId = company?.id ? parseInt(company.id, 10) : null;
+  // El rol vive en la membresía (por compañía); la compañía sale del contexto.
+  const { data, loading } = useQuery(COMPANY_MEMBERS_QUERY, {
+    fetchPolicy: "network-only",
+  });
 
-  const { data, loading } = useQuery<{ companyEmployees: Employee[] }>(
-    GET_COMPANY_EMPLOYEES,
-    {
-      variables: { companyId },
-      skip: !companyId,
-      fetchPolicy: "network-only",
-    },
-  );
-
-  const [removeEmployee, { loading: removing }] = useMutation(
-    REMOVE_EMPLOYEE_MUTATION,
+  const [revokeMembership, { loading: removing }] = useMutation(
+    REVOKE_MEMBERSHIP_MUTATION,
     {
       onCompleted: () => {
         showToast.success(
@@ -35,24 +28,42 @@ export default function Team() {
         );
       },
       onError: (err) => showToast.error("No se pudo eliminar", err.message),
-      refetchQueries: [
-        {
-          query: GET_COMPANY_EMPLOYEES,
-          variables: { companyId },
-        },
-      ],
+      refetchQueries: [COMPANY_MEMBERS_QUERY],
     },
   );
 
-  const employees = data?.companyEmployees ?? [];
+  const employees = useMemo<Employee[]>(
+    () =>
+      (data?.companyMembers ?? [])
+        .filter((membership) => membership.status === "ACTIVE")
+        .filter((membership) => membership.role !== "CLIENT")
+        .map((membership) => ({
+          id: membership.user.id,
+          name: membership.user.name ?? null,
+          lastname: membership.user.lastname ?? null,
+          email: membership.user.email,
+          phone: membership.user.phone ?? null,
+          role: membership.role,
+          status: membership.status,
+          profilePicture: membership.user.profilePicture ?? null,
+        })),
+    [data?.companyMembers],
+  );
 
   const handleAddEmployee = () => {
-    if (!companyId) return;
-    NiceModal.show(AddEmployeeModal, { companyId });
+    NiceModal.show(AddEmployeeModal, {});
   };
 
   const handleRemove = (userId: string) => {
-    removeEmployee({ variables: { userId: parseInt(userId, 10) } });
+    // revokeMembership exige el rol exacto de la membresía a revocar.
+    const employee = employees.find((e) => e.id === userId);
+    if (!employee) return;
+    revokeMembership({
+      variables: {
+        userId,
+        role: employee.role as "OWNER" | "ADMIN" | "STAFF" | "CLIENT",
+      },
+    });
   };
 
   return (

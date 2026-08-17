@@ -2,11 +2,11 @@ import { Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AdPawsCard from "@/components/AdPawsCard";
 import { Switch } from "../ui/switch";
+import { type ServiceCategory } from "@/lib/api/services.api";
 import {
-  UPDATE_SERVICE,
-  type Service,
-  type ServiceCategory,
-} from "@/lib/api/services.api";
+  UPDATE_SERVICE_MUTATION,
+  SERVICES_QUERY,
+} from "@/graphql/operations/services";
 import { useMutation } from "@apollo/client/react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -32,18 +32,18 @@ const ServicePricingCard = ({
   onDelete,
 }: ServicePricingCardProps) => {
   const queryClient = useQueryClient();
-  const [updateService, { loading: isUpdating }] = useMutation(UPDATE_SERVICE, {
-    onCompleted: async (result) => {
-      const resultData = result as { updateService: Service };
-      console.log(resultData);
-      await queryClient.invalidateQueries({
-        predicate: (query) => {
-          console.log(query);
-          return query.queryKey[0] === "servicesByCompany";
-        },
-      });
+  const [updateService, { loading: isUpdating }] = useMutation(
+    UPDATE_SERVICE_MUTATION,
+    {
+      refetchQueries: [SERVICES_QUERY],
+      onCompleted: async () => {
+        // El CheckInDialog cachea servicios vía TanStack Query.
+        await queryClient.invalidateQueries({
+          predicate: (query) => query.queryKey[0] === "servicesByCompany",
+        });
+      },
     },
-  });
+  );
 
   const formattedPrice = new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -53,7 +53,9 @@ const ServicePricingCard = ({
 
   const handleToggleStatus = () => {
     const status = service.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
-    updateService({ variables: { input: { id: service.id, status } } });
+    updateService({
+      variables: { id: service.id, input: { status: status as "ACTIVE" | "INACTIVE" } },
+    });
   };
 
   return (

@@ -2,12 +2,21 @@ import { useState, memo } from "react";
 import AdPawsCard from "../AdPawsCard";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { MoreVertical, LogOut, DollarSign, Receipt, Users } from "lucide-react";
+import {
+  MoreVertical,
+  LogOut,
+  DollarSign,
+  Receipt,
+  Users,
+  LogIn,
+  Clock,
+} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { type ReservationFull } from "@/lib/api/reservations.api";
 import { DOG_BREEDS } from "@/lib/utils";
@@ -27,6 +36,7 @@ import {
   formatCheckIn,
   getOwnerName,
   getAvailableActions,
+  isOverdueArrival,
 } from "./utils/guestUtils";
 
 function GuestAvatar({
@@ -106,7 +116,7 @@ function GuestActionsMenu({
   const [open, setOpen] = useState(false);
   const actions = getAvailableActions(reservation);
 
-  if (!actions.hasAnyAction) return null;
+  if (!actions.hasMenuAction) return null;
 
   const handleAction = (fn: () => void) => {
     fn();
@@ -170,6 +180,7 @@ function GuestActionsMenu({
 
 interface GuestRowProps {
   reservation: ReservationFull;
+  onCheckIn: (reservation: ReservationFull) => void;
   onCheckout: (reservation: ReservationFull) => void;
   onCollectPayment: (reservation: ReservationFull) => void;
   onCheckoutAndCollect: (reservation: ReservationFull) => void;
@@ -178,6 +189,7 @@ interface GuestRowProps {
 
 const GuestRow = memo(function GuestRow({
   reservation,
+  onCheckIn,
   onCheckout,
   onCollectPayment,
   onCheckoutAndCollect,
@@ -186,6 +198,10 @@ const GuestRow = memo(function GuestRow({
   const dog = reservation.dog;
   const ownerName = getOwnerName(reservation);
   const checkInTime = formatCheckIn(reservation.checkIn);
+  const actions = getAvailableActions(reservation);
+  // La hora programada ya pasó y el perro no ha llegado: eso es lo que el
+  // staff necesita ver de un vistazo en esta pestaña.
+  const overdue = isOverdueArrival(reservation);
 
   return (
     <div className="flex items-center gap-4 px-6 py-4 hover:bg-muted/40 transition-colors">
@@ -197,15 +213,32 @@ const GuestRow = memo(function GuestRow({
           {DOG_BREEDS[dog?.breed as keyof typeof DOG_BREEDS] || dog?.breed} •{" "}
           {getServiceLabel(reservation)}
         </p>
-        <p className="text-xs text-muted-foreground truncate">
-          {checkInTime}
-          {checkInTime && ownerName && " • "}
-          {ownerName && `Dueño: ${ownerName}`}
+        <p className="text-xs truncate flex items-center gap-1">
+          {overdue && <Clock className="w-3 h-3 shrink-0 text-amber-700" />}
+          <span className={overdue ? "text-amber-700" : "text-muted-foreground"}>
+            {overdue ? `Esperado ${checkInTime}` : checkInTime}
+          </span>
+          <span className="text-muted-foreground">
+            {checkInTime && ownerName && " • "}
+            {ownerName && `Dueño: ${ownerName}`}
+          </span>
         </p>
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
-        <PaymentBadge paymentStatus={reservation.paymentStatus} />
+        {actions.canCheckIn ? (
+          <Button
+            size="sm"
+            className="rounded-full"
+            disabled={isActionLoading}
+            onClick={() => onCheckIn(reservation)}
+          >
+            <LogIn className="w-3.5 h-3.5 mr-1.5" />
+            Check-in
+          </Button>
+        ) : (
+          <PaymentBadge paymentStatus={reservation.paymentStatus} />
+        )}
         <StatusBadge status={reservation.status} />
         <GuestActionsMenu
           reservation={reservation}
@@ -244,7 +277,9 @@ function EmptyState({
       <p className="text-xs text-muted-foreground">
         {timeFilter === "today"
           ? "Los huéspedes aparecerán aquí cuando hagan check-in"
-          : "No hay registros históricos para esta categoría"}
+          : timeFilter === "arriving"
+            ? "Nada pendiente por recibir hoy"
+            : "No hay registros históricos para esta categoría"}
       </p>
     </div>
   );
@@ -284,6 +319,7 @@ export default function CurrentGuests() {
   );
 
   const {
+    handleCheckIn,
     handleCheckout,
     handleCollectPayment,
     handleCheckoutAndCollect,
@@ -319,6 +355,7 @@ export default function CurrentGuests() {
         >
           <TabsList variant="line">
             <TabsTrigger value="today">Hoy</TabsTrigger>
+            <TabsTrigger value="arriving">Por llegar</TabsTrigger>
             <TabsTrigger value="past">Pasados</TabsTrigger>
           </TabsList>
         </Tabs>
@@ -336,6 +373,7 @@ export default function CurrentGuests() {
             <GuestRow
               key={reservation.id}
               reservation={reservation}
+              onCheckIn={handleCheckIn}
               onCheckout={handleCheckout}
               onCollectPayment={handleCollectPayment}
               onCheckoutAndCollect={handleCheckoutAndCollect}

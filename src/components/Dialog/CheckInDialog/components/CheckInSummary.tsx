@@ -1,3 +1,4 @@
+import { PackageCheck } from "lucide-react";
 import { type Service } from "@/lib/api/services.api";
 import { SERVICE_TYPE_CONFIG, formatDate, formatPrice } from "../constants";
 import type { ServiceType } from "../types";
@@ -9,7 +10,14 @@ interface CheckInSummaryProps {
   stayDates?: DateRangeValue;
   selectedAdditionalServices: string[];
   addonServices: Service[];
-  total: number;
+  /** Valuación completa, como si no hubiera paquete. Null si no hay cotización. */
+  total: number | null;
+  /** Lo que realmente se cobra, ya descontada la cobertura. Null si no hay cotización. */
+  amountDue?: number | null;
+  /** Fechas (ISO) que cubre un paquete. La cobertura se decide por fecha. */
+  coveredDates?: string[];
+  /** Add-ons cubiertos por paquete, por id de servicio. */
+  coveredAddOnIds?: string[];
   numberOfNights?: number;
 }
 
@@ -20,6 +28,9 @@ export function CheckInSummary({
   selectedAdditionalServices,
   addonServices,
   total,
+  amountDue,
+  coveredDates = [],
+  coveredAddOnIds = [],
   numberOfNights,
 }: CheckInSummaryProps) {
   const config = SERVICE_TYPE_CONFIG[serviceType];
@@ -27,6 +38,18 @@ export function CheckInSummary({
 
   const isHotel = serviceType === "HOTEL";
   const nights = numberOfNights || 0;
+
+  // La cobertura es por fecha, así que una estancia puede estar cubierta a
+  // medias: con "noches L–J", un miércoles→domingo son dos noches del paquete
+  // y dos en efectivo. Mostrar solo el total en ese caso haría creer que se
+  // cobra algo que ya estaba pagado.
+  const coveredCount = coveredDates.length + coveredAddOnIds.length;
+  const hasCoverage = coveredCount > 0;
+
+  // El importe a cobrar lo muestra CheckInActionBar; aquí solo hace falta
+  // cuánto absorbió el paquete para poder mostrarlo junto a las fechas.
+  const payable = amountDue ?? total ?? 0;
+  const discount = total !== null ? total - payable : 0;
 
   return (
     <div className="space-y-4">
@@ -100,30 +123,68 @@ export function CheckInSummary({
             {selectedAdditionalServices.map((serviceId) => {
               const addon = addonServices.find((s) => s.id === serviceId);
               if (!addon) return null;
+              const covered = coveredAddOnIds.includes(serviceId);
               return (
                 <div
                   key={serviceId}
                   className="flex items-center justify-between text-sm"
                 >
                   <span>{addon.name}</span>
-                  <span className="font-medium">
-                    {formatPrice(addon.price)}
-                  </span>
+                  {covered ? (
+                    <span className="font-medium text-brand-strong flex items-center gap-1">
+                      <PackageCheck className="w-3.5 h-3.5" />
+                      Incluido
+                    </span>
+                  ) : (
+                    <span className="font-medium">
+                      {formatPrice(addon.price)}
+                    </span>
+                  )}
                 </div>
               );
             })}
           </div>
         )}
 
-        {/* Total */}
-        <div className="border-t-2 border-gray-300 dark:border-gray-500 pt-3 mt-3">
-          <div className="flex items-center justify-between">
-            <span className="font-semibold text-lg">Total</span>
-            <span className="font-bold text-xl text-[#A3C585]">
-              {formatPrice(total)}
-            </span>
+        {/*
+          Cobertura del paquete.
+          El importe final ya NO vive aquí: lo muestra la barra fija del pie,
+          que está siempre a la vista. Este bloque se queda con lo que la barra
+          no puede decir — QUÉ fechas se cubrieron, que es lo que permite
+          revisar si la cobertura salió como se esperaba.
+        */}
+        {hasCoverage && (
+          <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+            <div className="flex items-center justify-between gap-2 text-sm">
+              <span className="flex items-center gap-1.5 text-brand-strong font-medium">
+                <PackageCheck className="w-4 h-4 shrink-0" />
+                {coveredDates.length > 0
+                  ? `${coveredDates.length} ${
+                      isHotel
+                        ? coveredDates.length === 1
+                          ? "noche cubierta"
+                          : "noches cubiertas"
+                        : coveredDates.length === 1
+                          ? "día cubierto"
+                          : "días cubiertos"
+                    }`
+                  : "Extras cubiertos"}
+              </span>
+              {discount > 0 && (
+                <span className="text-brand-strong whitespace-nowrap">
+                  −{formatPrice(discount)}
+                </span>
+              )}
+            </div>
+            {coveredDates.length > 0 && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {coveredDates
+                  .map((date) => formatDate(new Date(date)))
+                  .join(" · ")}
+              </p>
+            )}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

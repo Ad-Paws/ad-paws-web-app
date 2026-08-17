@@ -1,12 +1,8 @@
 import { useQuery } from "@apollo/client/react";
 import { DollarSign } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "@/contexts/AuthContext";
-import {
-  GET_TODAYS_REVENUE,
-  type TodaysRevenueResponse,
-  type TodaysRevenueVariables,
-} from "@/lib/api/stats.api";
+import { REVENUE_STATS_QUERY } from "@/graphql/operations/stats";
+import { moneyToNumber } from "@/utils/adapters";
 
 const SERVICE_TYPE_LABELS: Record<string, string> = {
   HOTEL: "Estancias",
@@ -20,18 +16,15 @@ function formatCurrency(amount: number): string {
   return `$${amount.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
+/**
+ * Ingresos del día (revenueStats). Solo OWNER/ADMIN pueden pedirla —
+ * el Dashboard no monta este componente para otros roles.
+ */
 export default function TodaysRevenue() {
-  const { company } = useAuth();
+  const { data, loading } = useQuery(REVENUE_STATS_QUERY);
 
-  const { data, loading } = useQuery<TodaysRevenueResponse, TodaysRevenueVariables>(
-    GET_TODAYS_REVENUE,
-    {
-      variables: { companyId: Number(company?.id) },
-      skip: !company?.id,
-    }
-  );
-
-  const revenue = data?.todaysRevenue;
+  const revenue = data?.revenueStats;
+  const previousUnpaid = moneyToNumber(revenue?.previousUnpaid);
 
   return (
     <div className="rounded-md bg-gradient-to-br bg-[#1F3F3A] text-white p-6 flex flex-col gap-4">
@@ -51,7 +44,7 @@ export default function TodaysRevenue() {
         <>
           <div>
             <p className="text-3xl font-bold tracking-tight">
-              {formatCurrency(revenue?.total ?? 0)}
+              {formatCurrency(moneyToNumber(revenue?.total))}
             </p>
           </div>
 
@@ -59,20 +52,20 @@ export default function TodaysRevenue() {
             <div className="flex items-center justify-between">
               <span className="text-sm opacity-80">Pagado</span>
               <span className="text-sm font-semibold text-green-300">
-                {formatCurrency(revenue?.paid ?? 0)}
+                {formatCurrency(moneyToNumber(revenue?.paid))}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm opacity-80">Pendiente</span>
               <span className="text-sm font-semibold text-amber-300">
-                {formatCurrency(revenue?.unpaid ?? 0)}
+                {formatCurrency(moneyToNumber(revenue?.unpaid))}
               </span>
             </div>
-            {(revenue?.refunded ?? 0) > 0 && (
+            {previousUnpaid > 0 && (
               <div className="flex items-center justify-between">
-                <span className="text-sm opacity-80">Reembolsos</span>
+                <span className="text-sm opacity-80">Pendiente anterior</span>
                 <span className="text-sm font-semibold text-red-300">
-                  -{formatCurrency(revenue?.refunded ?? 0)}
+                  {formatCurrency(previousUnpaid)}
                 </span>
               </div>
             )}
@@ -80,13 +73,13 @@ export default function TodaysRevenue() {
 
           {revenue?.byServiceType && revenue.byServiceType.length > 0 && (
             <div className="space-y-2 pt-2 border-t border-white/20">
-              {revenue.byServiceType.map((item: { serviceType: string; amount: number }) => (
+              {revenue.byServiceType.map((item) => (
                 <div key={item.serviceType} className="flex items-center justify-between">
                   <span className="text-sm opacity-80">
                     {SERVICE_TYPE_LABELS[item.serviceType] ?? item.serviceType}
                   </span>
                   <span className="text-sm font-semibold">
-                    {formatCurrency(item.amount)}
+                    {formatCurrency(moneyToNumber(item.amount))}
                   </span>
                 </div>
               ))}

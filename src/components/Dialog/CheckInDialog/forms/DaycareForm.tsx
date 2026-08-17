@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import { useMutation } from "@apollo/client/react";
+import { useMutation, useQuery } from "@apollo/client/react";
 import { AlertCircle, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -15,25 +15,29 @@ import {
 } from "@/components/Form";
 import { type Service } from "@/lib/api/services.api";
 import {
-  CREATE_RESERVATION,
-  RESERVATIONS_BY_COMPANY,
-  type CreateReservationResponse,
-  type CreateReservationVariables,
-  type ReservationItemCreateInput,
-} from "@/lib/api/reservations.api";
+  CREATE_RESERVATION_MUTATION,
+  CHECK_IN_RESERVATION_MUTATION,
+  MARK_RESERVATION_PAID_MUTATION,
+  QUOTE_RESERVATION_QUERY,
+  RESERVATIONS_QUERY,
+} from "@/graphql/operations/reservations";
+import { evictReservationCache } from "@/graphql/cache";
 import { formatPrice } from "../constants";
-import { CheckInSummary } from "../components";
+import {
+  ActivePackageBanner,
+  CheckInActionBar,
+  CheckInSummary,
+} from "../components";
+import { useQuoteBreakdown } from "../hooks/useQuoteBreakdown";
 import type { CheckInFormValues } from "../types";
-import { GET_TODAYS_REVENUE } from "@/lib/api/stats.api";
+import { REVENUE_STATS_QUERY } from "@/graphql/operations/stats";
 
 interface DaycareFormProps {
   services: Service[];
   addonServices: Service[];
   dogId: string;
   companyId: number;
-  onSuccess: (
-    reservation: CreateReservationResponse["createReservation"],
-  ) => void;
+  onSuccess: () => void;
   onCancel: () => void;
   onBack: () => void;
 }
@@ -42,17 +46,28 @@ export function DaycareForm({
   services,
   addonServices,
   dogId,
-  companyId,
   onSuccess,
   onCancel,
 }: DaycareFormProps) {
-  const [createReservation, { loading: isSubmitting, error: mutationError }] =
-    useMutation<CreateReservationResponse, CreateReservationVariables>(
-      CREATE_RESERVATION,
-      {
-        refetchQueries: [RESERVATIONS_BY_COMPANY, GET_TODAYS_REVENUE],
-      },
-    );
+  // El servidor calcula los precios (incluidos excepciones y cobertura de
+  // paquete); el cliente solo manda servicio, extras y fechas. El walk-in de
+  // guardería es crear + check-in inmediato.
+  const [createReservation, { loading: isCreating, error: createError }] =
+    useMutation(CREATE_RESERVATION_MUTATION, {
+      update: evictReservationCache,
+    });
+  const [checkInReservation, { loading: isCheckingIn, error: checkInError }] =
+    useMutation(CHECK_IN_RESERVATION_MUTATION, {
+      refetchQueries: [RESERVATIONS_QUERY, REVENUE_STATS_QUERY],
+      awaitRefetchQueries: true,
+      update: evictReservationCache,
+    });
+  const [markReservationPaid, { loading: isMarkingPaid }] = useMutation(
+    MARK_RESERVATION_PAID_MUTATION,
+    { update: evictReservationCache },
+  );
+  const isSubmitting = isCreating || isCheckingIn || isMarkingPaid;
+  const mutationError = createError || checkInError;
 
   const form = useForm<CheckInFormValues>({
     defaultValues: {
@@ -82,23 +97,42 @@ export function DaycareForm({
       (services.length === 1 && s.id === services[0].id),
   );
 
-  // Calculate total
-  const total = useMemo(() => {
-    let sum = 0;
-
-    if (selectedService) {
-      sum += selectedService.price;
-    }
-
-    selectedAdditionalServices.forEach((serviceId) => {
-      const addon = addonServices.find((s) => s.id === serviceId);
-      if (addon) {
-        sum += addon.price;
-      }
-    });
-
-    return sum;
-  }, [selectedService, selectedAdditionalServices, addonServices]);
+  // El total lo cotiza el servidor con las mismas reglas del create
+  // (excepciones de precio por fecha incluidas). Compra individual: si el
+  // perro tuviera paquete, la cobertura se aplica sola al crear.
+  const scheduledCheckIn = useMemo(() => new Date().toISOString(), []);
+  const {
+    data: quoteData,
+    loading: quoteLoading,
+    error: quoteQueryError,
+  } = useQuery(
+    QUOTE_RESERVATION_QUERY,
+    {
+      variables: {
+        input: {
+          dogId,
+          serviceId: selectedService?.id ?? "",
+          addOnServiceIds: selectedAdditionalServices,
+          scheduledCheckIn,
+        },
+      },
+      skip: !selectedService || !dogId,
+    },
+  );
+  // `total` es la valuación completa; `amountDue` es lo que se cobra ya
+  // descontada la cobertura del paquete, que se decide por fecha.
+  // Los CTA se bloquean hasta tener la cotización del servidor: confirmar
+  // sin total cotizado permitiría registrar cobros con un importe alterado
+  // o desactualizado.
+  const {
+    total,
+    amountDue,
+    coveredDates,
+    coveredAddOnIds,
+    quoteReady,
+    quoteError,
+  } =
+    useQuoteBreakdown(quoteData, quoteLoading, quoteQueryError);
 
   const toggleAdditionalService = (
     serviceId: string,
@@ -123,46 +157,29 @@ export function DaycareForm({
 
       if (!service || !data.dogId) return;
 
-      const items: ReservationItemCreateInput[] = [];
-
-      items.push({
-        serviceId: Number(service.id),
-        name: service.name,
-        quantity: 1,
-        unitPrice: service.price,
-        totalPrice: service.price,
-        kind: "MAIN",
-      });
-
-      data.additionalServices.forEach((additionalServiceId) => {
-        const addon = addonServices.find((s) => s.id === additionalServiceId);
-        if (addon) {
-          items.push({
-            serviceId: Number(addon.id),
-            name: addon.name,
-            quantity: 1,
-            unitPrice: addon.price,
-            totalPrice: addon.price,
-            kind: "ADDON",
-          });
-        }
-      });
-
       try {
         const result = await createReservation({
           variables: {
-            dogId: Number(data.dogId),
-            companyId,
-            items,
-            paymentStatus,
-            paymentSource: "BUSINESS",
-            checkIn: new Date().toISOString(),
-            status: "CHECKED_IN",
+            input: {
+              dogId: data.dogId,
+              serviceId: service.id,
+              addOnServiceIds: data.additionalServices,
+              scheduledCheckIn: new Date().toISOString(),
+            },
           },
         });
 
-        if (result.data?.createReservation) {
-          onSuccess(result.data.createReservation);
+        const created = result.data?.createReservation;
+        if (created) {
+          await checkInReservation({ variables: { id: created.id } });
+          if (paymentStatus === "PAID") {
+            // Cobrado en la terminal externa del negocio; aquí solo se marca
+            // para el match con el corte.
+            await markReservationPaid({
+              variables: { id: created.id, method: "TERMINAL" },
+            });
+          }
+          onSuccess();
         }
       } catch (error) {
         console.error("Error creating reservation:", error);
@@ -181,6 +198,17 @@ export function DaycareForm({
           </span>
         </div>
       )}
+
+      {/* Saberlo ANTES de elegir fechas es lo que permite decidir: "las
+          noches son L–J, el viernes se cobra". Se filtra a los servicios de
+          este paso para no anunciar saldo que no aplica. */}
+      <ActivePackageBanner
+        dogId={dogId}
+        serviceIds={[
+          ...services.map((s) => s.id),
+          ...addonServices.map((s) => s.id),
+        ]}
+      />
 
       {/* 1. Service Selection - only show if multiple services */}
       {services.length > 1 && (
@@ -201,7 +229,7 @@ export function DaycareForm({
                       onClick={() => field.onChange(service.id)}
                       className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
                         field.value === service.id
-                          ? "border-[#A3C585] bg-[#A3C585]/10"
+                          ? "border-brand-border bg-brand-tint"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                     >
@@ -213,7 +241,7 @@ export function DaycareForm({
                             {service.endTime}
                           </p>
                         </div>
-                        <p className="font-semibold text-[#A3C585]">
+                        <p className="font-semibold text-brand-strong">
                           {formatPrice(service.price)}
                         </p>
                       </div>
@@ -229,7 +257,7 @@ export function DaycareForm({
 
       {/* Auto-selected service display for single service */}
       {services.length === 1 && (
-        <div className="p-4 rounded-xl border-2 border-[#A3C585] bg-[#A3C585]/10">
+        <div className="p-4 rounded-xl border-2 border-brand-border bg-brand-tint">
           <div className="flex justify-between items-center">
             <div>
               <p className="font-medium">{services[0].name}</p>
@@ -238,7 +266,7 @@ export function DaycareForm({
                 {services[0].endTime}
               </p>
             </div>
-            <p className="font-semibold text-[#A3C585]">
+            <p className="font-semibold text-brand-strong">
               {formatPrice(services[0].price)}
             </p>
           </div>
@@ -261,7 +289,7 @@ export function DaycareForm({
                       key={addon.id}
                       className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
                         field.value.includes(addon.id)
-                          ? "border-[#A3C585] bg-[#A3C585]/10"
+                          ? "border-brand-border bg-brand-tint"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                     >
@@ -272,11 +300,11 @@ export function DaycareForm({
                             toggleAdditionalService(addon.id, field.value),
                           )
                         }
-                        className="data-[state=checked]:bg-[#A3C585] data-[state=checked]:border-[#A3C585]"
+                        className="data-[state=checked]:bg-brand data-[state=checked]:border-brand"
                       />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <Plus className="w-4 h-4 text-[#A3C585]" />
+                          <Plus className="w-4 h-4 text-brand-strong" />
                           <span className="font-medium">{addon.name}</span>
                         </div>
                         <p className="text-sm text-gray-500">
@@ -285,7 +313,7 @@ export function DaycareForm({
                             : `${addon.startTime} - ${addon.endTime}`}
                         </p>
                       </div>
-                      <span className="font-semibold text-[#A3C585]">
+                      <span className="font-semibold text-brand-strong">
                         +{formatPrice(addon.price)}
                       </span>
                     </label>
@@ -305,21 +333,35 @@ export function DaycareForm({
         selectedAdditionalServices={selectedAdditionalServices}
         addonServices={addonServices}
         total={total}
+        amountDue={amountDue}
+        coveredDates={coveredDates}
+        coveredAddOnIds={coveredAddOnIds}
       />
 
       {/* Actions */}
 
-      <div className="flex flex-col gap-3">
+      {/* Acciones fijas al pie con el importe: en pantallas bajas eran justo
+          lo que quedaba fuera de vista. */}
+      <CheckInActionBar
+        amountDue={amountDue}
+        total={total}
+        quoteError={quoteError}
+      >
+        <div className="flex flex-col gap-3">
         <Button
           type="button"
           className="rounded-full bg-[#4D67A3] hover:bg-[#293a5b] text-white"
-          disabled={isSubmitting || !isFormValid()}
+          disabled={isSubmitting || !isFormValid() || !quoteReady}
           size="lg"
           onClick={() => submitWithPayment("PAID")}
         >
           {isSubmitting ? (
             <>
               <Spinner /> Procesando...
+            </>
+          ) : quoteLoading ? (
+            <>
+              <Spinner /> Cotizando...
             </>
           ) : (
             "Pagar y confirmar"
@@ -328,7 +370,7 @@ export function DaycareForm({
         <Button
           type="button"
           className="rounded-full"
-          disabled={isSubmitting || !isFormValid()}
+          disabled={isSubmitting || !isFormValid() || !quoteReady}
           size="lg"
           variant="outline"
           onClick={() => submitWithPayment("UNPAID")}
@@ -337,20 +379,25 @@ export function DaycareForm({
             <>
               <Spinner /> Procesando...
             </>
+          ) : quoteLoading ? (
+            <>
+              <Spinner /> Cotizando...
+            </>
           ) : (
             "Pendiente de pago"
           )}
         </Button>
-      </div>
+        </div>
 
-      <Button
-        type="button"
-        variant="link"
-        className="w-full rounded-full"
-        onClick={onCancel}
-      >
-        Cancelar
-      </Button>
+        <Button
+          type="button"
+          variant="link"
+          className="w-full rounded-full h-8"
+          onClick={onCancel}
+        >
+          Cancelar
+        </Button>
+      </CheckInActionBar>
     </Form>
   );
 }

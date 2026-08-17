@@ -27,7 +27,7 @@ export function StatsigWrapper({ children }: StatsigWrapperProps) {
           userID: user.id || "anonymous",
           email: user.email,
           custom: {
-            name: user.name,
+            name: user.name ?? undefined,
             companyId: company?.id,
             companyName: company?.name,
             companyUUID: company?.uuid,

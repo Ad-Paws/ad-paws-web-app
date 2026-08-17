@@ -1,0 +1,187 @@
+{
+  "$schema": "https://design-tokens.org/schema.json",
+  "name": "AdPaws",
+  "version": "1.0.0",
+  "description": "Design tokens de AdPaws. Fuente de verdad: src/index.css + src/tailwind.config.ts",
+  "typography": {
+    "fontFamily": {
+      "sans": "\"sofia-pro\", system-ui, sans-serif",
+      "heading": "\"sofia-pro\", system-ui, sans-serif",
+      "serif": "\"bookmania\", Georgia, serif",
+      "mono": "ui-monospace, SFMono-Regular, Menlo, monospace"
+    },
+    "baseLineHeight": 1.5,
+    "baseFontWeight": 400
+  },
+  "radius": {
+    "base": "0.75rem",
+    "sm": "0.5rem",
+    "md": "0.625rem",
+    "lg": "0.75rem",
+    "xl": "1rem"
+  },
+  "palette": {
+    "brand": {
+      "50": "#f1f6f1",
+      "100": "#dce8dc",
+      "200": "#c0d4c0",
+      "300": "#a4c0a4",
+      "400": "#8fb08f",
+      "500": "#80af80",
+      "600": "#679267",
+      "700": "#4f744f",
+      "800": "#395639",
+      "900": "#243924"
+    },
+    "brandSecondary": {
+      "50": "#f3eeed",
+      "100": "#e4d8d4",
+      "200": "#c8afa9",
+      "300": "#ac877e",
+      "400": "#8f6053",
+      "500": "#4c2d22",
+      "600": "#40251c",
+      "700": "#331e17",
+      "800": "#251611",
+      "900": "#170e0b"
+    },
+    "brandAccent": {
+      "50": "#fcf6eb",
+      "100": "#f8e8ce",
+      "200": "#f0cf99",
+      "300": "#e8b564",
+      "400": "#e0a14a",
+      "500": "#e4a542",
+      "600": "#bd8736",
+      "700": "#95692a",
+      "800": "#6d4b1e",
+      "900": "#452d12"
+    },
+    "brandInfo": {
+      "50": "#f6f9fc",
+      "100": "#e9f0f8",
+      "200": "#d2e1f0",
+      "300": "#bcd1e7",
+      "400": "#a5c1df",
+      "500": "#c5daef",
+      "600": "#9bb0c4",
+      "700": "#758696",
+      "800": "#505c68",
+      "900": "#2b323b"
+    },
+    "brandAlert": {
+      "50": "#fdf3f3",
+      "100": "#fbe3e3",
+      "200": "#f6c7c7",
+      "300": "#f0aaaa",
+      "400": "#ea8e8e",
+      "500": "#ed8383",
+      "600": "#c56c6c",
+      "700": "#9c5555",
+      "800": "#733e3e",
+      "900": "#4a2626"
+    },
+    "brandBg": {
+      "soft": "#f5f9f2",
+      "muted": "#e4f0e4"
+    }
+  },
+  "semantic": {
+    "light": {
+      "background": "#e4f0e4",
+      "foreground": "#1a1a1a",
+      "card": "#ffffff",
+      "cardForeground": "#1a1a1a",
+      "popover": "#ffffff",
+      "popoverForeground": "#1a1a1a",
+      "primary": "#80af80",
+      "primaryForeground": "#ffffff",
+      "secondary": "#4c2d22",
+      "secondaryForeground": "#f5f9f2",
+      "accent": "#e4a542",
+      "accentForeground": "#1a1a1a",
+      "muted": "#e4f0e4",
+      "mutedForeground": "#7e7e7e",
+      "destructive": "#ed8383",
+      "destructiveForeground": "#ffffff",
+      "info": "#c5daef",
+      "infoForeground": "#2b323b",
+      "border": "#dce8dc",
+      "input": "#dce8dc",
+      "ring": "#80af80",
+      "badge": {
+        "success": "#dce8dc",
+        "successForeground": "#4f744f",
+        "warning": "#f8e8ce",
+        "warningForeground": "#95692a",
+        "danger": "#fbe3e3",
+        "dangerForeground": "#9c5555"
+      },
+      "chart": ["#80af80", "#4c2d22", "#e4a542", "#c5daef", "#ed8383"],
+      "sidebar": {
+        "background": "#7cb17c",
+        "foreground": "#ffffff",
+        "primary": "#ffffff",
+        "primaryForeground": "#7cb17c",
+        "accent": "#8fbc8f",
+        "accentForeground": "#ffffff",
+        "border": "#70a970",
+        "ring": "#daa64e"
+      },
+      "toast": {
+        "success": { "bg": "#e6f4f1", "border": "#008073", "icon": "#008073", "title": "#133e3d", "text": "#133e3d" },
+        "info": { "bg": "#e7eef8", "border": "#3b69ab", "icon": "#3b69ab", "title": "#2a4068", "text": "#2a4068" },
+        "warning": { "bg": "#fff3e5", "border": "#ff8100", "icon": "#ff8100", "title": "#7a3e00", "text": "#7a3e00" },
+        "error": { "bg": "#ffe9e8", "border": "#ff5b54", "icon": "#ff5b54", "title": "#7a1c19", "text": "#7a1c19" }
+      }
+    },
+    "dark": {
+      "background": "#121613",
+      "foreground": "#f5f9f2",
+      "card": "#181d19",
+      "cardForeground": "#f5f9f2",
+      "popover": "#181d19",
+      "popoverForeground": "#f5f9f2",
+      "primary": "#80af80",
+      "primaryForeground": "#121613",
+      "secondary": "#c8afa9",
+      "secondaryForeground": "#121613",
+      "accent": "#e4a542",
+      "accentForeground": "#121613",
+      "muted": "#202720",
+      "mutedForeground": "#dce8dc",
+      "destructive": "#ed8383",
+      "destructiveForeground": "#121613",
+      "info": "#c5daef",
+      "infoForeground": "#121613",
+      "border": "#202720",
+      "input": "#202720",
+      "ring": "#80af80",
+      "badge": {
+        "success": "#1e3a1e",
+        "successForeground": "#a4c0a4",
+        "warning": "#3a2a10",
+        "warningForeground": "#e8b564",
+        "danger": "#3a1e1e",
+        "dangerForeground": "#f0aaaa"
+      },
+      "chart": ["#80af80", "#c5daef", "#e4a542", "#ed8383", "#f5f9f2"],
+      "sidebar": {
+        "background": "#181d19",
+        "foreground": "#f5f9f2",
+        "primary": "#80af80",
+        "primaryForeground": "#121613",
+        "accent": "#e4a542",
+        "accentForeground": "#121613",
+        "border": "#202720",
+        "ring": "#80af80"
+      },
+      "toast": {
+        "success": { "bg": "#133e3d", "border": "#008073", "icon": "#9fd3bb", "title": "#9fd3bb", "text": "#d7efe8" },
+        "info": { "bg": "#1d2d45", "border": "#3b69ab", "icon": "#3b69ab", "title": "#a8c0ea", "text": "#cbd9f4" },
+        "warning": { "bg": "#3a2823", "border": "#fca134", "icon": "#fca134", "title": "#ffd8a6", "text": "#ffe6c7" },
+        "error": { "bg": "#3a1c1c", "border": "#ff5b54", "icon": "#ff5b54", "title": "#ff9a96", "text": "#ffd0ce" }
+      }
+    }
+  }
+}

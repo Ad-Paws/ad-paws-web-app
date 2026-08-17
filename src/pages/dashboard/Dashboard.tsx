@@ -4,7 +4,9 @@ import CurrentGuests from "@/components/Dashboard/CurrentGuests";
 import TodaysRevenue from "@/components/Dashboard/TodaysRevenue";
 
 export default function Dashboard() {
-  const { user, company } = useAuth();
+  const { user, company, role } = useAuth();
+  // revenueStats está restringido a OWNER/ADMIN en el backend.
+  const canSeeRevenue = role === "OWNER" || role === "ADMIN";
   return (
     <div className="h-[calc(100dvh-80px)] px-6 py-4 overflow-hidden">
       <div className="flex justify-between items-center mb-8">
@@ -25,7 +27,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 h-[calc(100%-108px)]">
         <CurrentGuests />
         <div className="flex flex-col gap-6">
-          <TodaysRevenue />
+          {canSeeRevenue && <TodaysRevenue />}
         </div>
       </div>
     </div>

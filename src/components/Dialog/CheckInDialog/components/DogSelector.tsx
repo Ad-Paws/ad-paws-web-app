@@ -8,11 +8,8 @@ import {
 } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  ACTIVE_DOG_PACKAGES,
-  type DogPackage,
-  type DogPackageBalance,
-} from "../../../../lib/api/dogPackages.api";
+import { DOG_PACKAGES_QUERY } from "@/graphql/operations/packages";
+import { daysMaskToShortLabel } from "@/utils/adapters";
 import type { Dog } from "../types";
 import { useStatsigClient } from "@statsig/react-bindings";
 
@@ -42,14 +39,14 @@ export function DogSelector({
   const isPackageConsiderationEnabled = client.checkGate(
     "dog_packages_consideration",
   );
-  console.log("isPackageConsiderationEnabled", isPackageConsiderationEnabled);
-  // Fetch active packages for the selected dog
-  const { data: packagesData } = useQuery<{
-    activeDogPackages: DogPackage[];
-  }>(ACTIVE_DOG_PACKAGES, {
-    variables: { dogId: selectedDogId ? Number(selectedDogId) : 0 },
+
+  // Los IDs son ID! (string) en el schema nuevo; la query anterior mandaba
+  // Int! y fallaba la validación en runtime.
+  const { data: packagesData } = useQuery(DOG_PACKAGES_QUERY, {
+    variables: { dogId: selectedDogId ?? "", activeOnly: true },
     skip: !selectedDogId || !isPackageConsiderationEnabled,
   });
+  const activePackages = packagesData?.dogPackages ?? [];
 
   // Filter dogs based on search query
   const filteredDogs = useMemo(() => {
@@ -85,7 +82,7 @@ export function DogSelector({
             type="button"
             className={`w-full p-3 rounded-xl border-2 text-left transition-all flex items-center gap-3 ${
               selectedDog
-                ? "border-[#A3C585] bg-[#A3C585]/10"
+                ? "border-brand-border bg-brand-tint"
                 : "border-gray-200 hover:border-gray-300 dark:hover:border-gray-600"
             }`}
           >
@@ -100,7 +97,7 @@ export function DogSelector({
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-[#A3C585]/20 text-[#A3C585] font-semibold text-lg">
+                    <div className="w-full h-full flex items-center justify-center bg-brand/20 text-brand-strong font-semibold text-lg">
                       {selectedDog.name.charAt(0).toUpperCase()}
                     </div>
                   )}
@@ -158,7 +155,7 @@ export function DogSelector({
                     onClick={() => handleSelect(dog.id)}
                     className={`w-full p-2 rounded-lg text-left transition-all flex items-center gap-3 ${
                       selectedDogId === dog.id
-                        ? "bg-[#A3C585]/10"
+                        ? "bg-brand-tint"
                         : "hover:bg-gray-100 dark:hover:bg-gray-800"
                     }`}
                   >
@@ -171,7 +168,7 @@ export function DogSelector({
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-[#A3C585]/20 text-[#A3C585] font-semibold">
+                        <div className="w-full h-full flex items-center justify-center bg-brand/20 text-brand-strong font-semibold">
                           {dog.name.charAt(0).toUpperCase()}
                         </div>
                       )}
@@ -185,7 +182,7 @@ export function DogSelector({
                     </div>
                     {/* Selected indicator */}
                     {selectedDogId === dog.id && (
-                      <div className="w-5 h-5 rounded-full bg-[#A3C585] flex items-center justify-center flex-shrink-0">
+                      <div className="w-5 h-5 rounded-full bg-brand flex items-center justify-center flex-shrink-0">
                         <Check className="w-3 h-3 text-white" />
                       </div>
                     )}
@@ -213,67 +210,65 @@ export function DogSelector({
           </div>
 
           {/* Active Packages */}
-          {packagesData?.activeDogPackages &&
-            packagesData.activeDogPackages.length > 0 && (
-              <div className="p-4 rounded-xl border-2 border-[#A3C585] bg-[#A3C585]/10">
-                <p className="text-xs font-medium text-[#A3C585] mb-3">
-                  Paquetes Activos ({packagesData.activeDogPackages.length})
-                </p>
-                <div className="space-y-3">
-                  {packagesData.activeDogPackages.map(
-                    (dogPackage: DogPackage) => (
-                      <div
-                        key={dogPackage.id}
-                        className="bg-white p-3 rounded-lg"
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <p className="font-medium text-sm">
-                            {dogPackage.package.name}
-                          </p>
-                          <span className="text-xs px-2 py-1 rounded bg-gray-100">
-                            {dogPackage.package.type}
+          {activePackages.length > 0 && (
+            <div className="p-4 rounded-xl border-2 border-brand-border bg-brand-tint">
+              <p className="text-xs font-medium text-brand-strong mb-3">
+                Paquetes Activos ({activePackages.length})
+              </p>
+              <div className="space-y-3">
+                {activePackages.map((dogPackage) => (
+                  <div key={dogPackage.id} className="bg-white p-3 rounded-lg">
+                    <p className="font-medium text-sm mb-2">
+                      {dogPackage.package.name}
+                    </p>
+                    {/*
+                      El saldo se muestra por servicio, no por paquete: las
+                      cantidades son por item, así que un mismo paquete puede
+                      traer un servicio con cupo y otro ilimitado. Los días van
+                      al lado porque la cobertura se decide por fecha — un
+                      paquete "L–J" no cubre el viernes aunque tenga saldo.
+                    */}
+                    <div className="space-y-1">
+                      {dogPackage.balances.map((balance) => (
+                        <div
+                          key={balance.id}
+                          className="flex items-center justify-between gap-2 text-xs"
+                        >
+                          <span className="text-gray-600 truncate">
+                            {balance.service.name}
+                            <span className="text-muted-foreground">
+                              {" "}
+                              · {daysMaskToShortLabel(balance.daysMask)}
+                            </span>
+                          </span>
+                          <span className="font-medium text-brand-strong whitespace-nowrap">
+                            {balance.remainingQuantity !== null
+                              ? `${balance.remainingQuantity} disponibles`
+                              : "Ilimitado"}
                           </span>
                         </div>
-                        <div className="space-y-1">
-                          {dogPackage.balances.map(
-                            (balance: DogPackageBalance) => (
-                              <div
-                                key={balance.id}
-                                className="flex items-center justify-between text-xs"
-                              >
-                                <span className="text-gray-600">
-                                  {balance.service.name}
-                                </span>
-                                <span className="font-medium text-[#A3C585]">
-                                  {balance.remainingQuantity !== null
-                                    ? `${balance.remainingQuantity} disponibles`
-                                    : "Ilimitado"}
-                                </span>
-                              </div>
-                            ),
-                          )}
-                        </div>
-                        {dogPackage.expiryDate && (
-                          <p className="text-xs text-gray-500 mt-2">
-                            Vence:{" "}
-                            {new Date(dogPackage.expiryDate).toLocaleDateString(
-                              "es-MX",
-                            )}
-                          </p>
+                      ))}
+                    </div>
+                    {dogPackage.expiryDate && (
+                      <p className="text-xs text-gray-500 mt-2">
+                        Vence:{" "}
+                        {new Date(dogPackage.expiryDate).toLocaleDateString(
+                          "es-MX",
                         )}
-                      </div>
-                    ),
-                  )}
-                </div>
+                      </p>
+                    )}
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
+          )}
 
           {/* Continue Button */}
           <Button
             type="button"
             onClick={handleContinue}
             disabled={!selectedDogId}
-            className="w-full rounded-full bg-[#A3C585] hover:bg-[#8FB86E] text-black font-semibold"
+            className="w-full rounded-full bg-brand hover:bg-brand-border text-black font-semibold"
           >
             Continuar
           </Button>

@@ -26,7 +26,13 @@ export const ITEM_KIND = {
 } as const;
 
 export type ServiceFilter = "all" | "stays" | "daycare";
-export type TimeFilter = "today" | "past";
+/**
+ * "arriving" son las reservaciones que YA existen y todavía no llegan.
+ * Sin esta pestaña quedaban invisibles: el tablero solo pedía CHECKED_IN y
+ * CHECKED_OUT, así que una estancia reservada con anticipación no aparecía en
+ * ningún lado y no había forma de recibirla.
+ */
+export type TimeFilter = "today" | "arriving" | "past";
 
 export const SERVICE_TYPE_MAP: Record<ServiceFilter, string | null> = {
   all: null,

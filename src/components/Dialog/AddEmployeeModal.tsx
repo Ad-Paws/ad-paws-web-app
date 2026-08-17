@@ -20,14 +20,13 @@ import {
   FormLabel,
   FormControl,
   FormMessage,
-  FormSelect,
+
 } from "@/components/Form";
 import {
-  ADD_EMPLOYEE_MUTATION,
-  GET_COMPANY_EMPLOYEES,
-} from "@/lib/api/user.api";
+  COMPANY_MEMBERS_QUERY,
+  INVITE_MEMBER_MUTATION,
+} from "@/graphql/operations/team";
 import { showToast } from "@/lib/toast";
-import type { SelectOption } from "@/components/Form/FormSelect";
 
 interface AddEmployeeFormValues {
   email: string;
@@ -35,8 +34,6 @@ interface AddEmployeeFormValues {
   name: string;
   lastname: string;
   phone: string;
-  gender: string;
-  birthDate: string;
 }
 
 interface Employee {
@@ -56,35 +53,24 @@ const DEFAULT_VALUES: AddEmployeeFormValues = {
   name: "",
   lastname: "",
   phone: "",
-  gender: "",
-  birthDate: "",
 };
 
-const GENDER_OPTIONS: SelectOption[] = [
-  { value: "Female", label: "Femenino" },
-  { value: "Male", label: "Masculino" },
-  { value: "Other", label: "Otro" },
-];
-
 export interface AddEmployeeModalProps {
-  companyId: number;
   onSuccess?: (employee: Employee) => void;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
 export default NiceModal.create(
-  ({ companyId, onSuccess }: AddEmployeeModalProps) => {
+  ({ onSuccess }: AddEmployeeModalProps) => {
     const modal = useModal();
     const [showPassword, setShowPassword] = useState(false);
 
-    const [addEmployee, { loading: isSubmitting, error: mutationError }] =
-      useMutation<{ addEmployee: Employee }>(ADD_EMPLOYEE_MUTATION, {
-        refetchQueries: [
-          {
-            query: GET_COMPANY_EMPLOYEES,
-            variables: { companyId },
-          },
-        ],
+    // inviteMember crea la cuenta (password temporal) o vincula una existente
+    // como STAFF de la compañía activa. gender/birthDate ya no forman parte
+    // del input: son datos del perfil del usuario, no de la membresía.
+    const [inviteMember, { loading: isSubmitting, error: mutationError }] =
+      useMutation(INVITE_MEMBER_MUTATION, {
+        refetchQueries: [COMPANY_MEMBERS_QUERY],
       });
 
     const form = useForm<AddEmployeeFormValues>({
@@ -94,29 +80,37 @@ export default NiceModal.create(
 
     const handleSubmit = async (data: AddEmployeeFormValues) => {
       try {
-        const input: Record<string, unknown> = {
-          email: data.email.trim(),
-          password: data.password,
-        };
-        if (data.name.trim()) input.name = data.name.trim();
-        if (data.lastname.trim()) input.lastname = data.lastname.trim();
-        if (data.phone.trim()) input.phone = data.phone.trim();
-        if (data.gender) input.gender = data.gender;
-        if (data.birthDate)
-          input.birthDate = new Date(data.birthDate).toISOString();
+        const result = await inviteMember({
+          variables: {
+            input: {
+              email: data.email.trim(),
+              password: data.password || undefined,
+              name: data.name.trim() || undefined,
+              lastname: data.lastname.trim() || undefined,
+              phone: data.phone.trim() || undefined,
+              role: "STAFF",
+            },
+          },
+        });
 
-        const result = await addEmployee({ variables: { input } });
-
-        if (result.data?.addEmployee) {
-          const added = result.data.addEmployee;
+        if (result.data?.inviteMember) {
+          const { user, membership } = result.data.inviteMember;
           const name =
-            [added.name, added.lastname].filter(Boolean).join(" ") ||
-            added.email;
+            [user.name, user.lastname].filter(Boolean).join(" ") || user.email;
           showToast.success(
             "Miembro agregado",
             `${name} ahora forma parte del equipo.`
           );
-          onSuccess?.(result.data.addEmployee);
+          onSuccess?.({
+            id: user.id,
+            name: user.name ?? null,
+            lastname: user.lastname ?? null,
+            email: user.email,
+            phone: null,
+            role: membership.role,
+            status: membership.status,
+            profilePicture: null,
+          });
           modal.hide();
           form.reset(DEFAULT_VALUES);
           setShowPassword(false);
@@ -290,39 +284,8 @@ export default NiceModal.create(
               )}
             />
 
-            {/* Gender and BirthDate */}
-            <div className="grid grid-cols-2 gap-3">
-              <FormField
-                name="gender"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Género</FormLabel>
-                    <FormControl>
-                      <FormSelect
-                        placeholder="Seleccionar"
-                        options={GENDER_OPTIONS}
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        disabled={isSubmitting}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                name="birthDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Fecha de nacimiento</FormLabel>
-                    <FormControl>
-                      <Input type="date" disabled={isSubmitting} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            {/* gender/birthDate se quitaron: InviteMemberInput no los acepta
+                (son datos del perfil del usuario, editables por él mismo). */}
 
             <DialogFooter className="pt-4 gap-3">
               <Button

@@ -12,8 +12,9 @@ import {
   type Service,
   type ServiceType,
   type PricingUnit,
-  SERVICES_BY_COMPANY_AND_TYPE,
 } from "@/lib/api/services.api";
+import { SERVICES_QUERY } from "@/graphql/operations/services";
+import { mapServiceToLegacy } from "@/utils/adapters";
 
 // Map tab values to ServiceType
 const TAB_TO_SERVICE_TYPE: Record<string, ServiceType> = {
@@ -91,25 +92,19 @@ const transformService = (service: Service): ServicePricing => ({
 
 interface ServiceTabContentProps {
   serviceType: ServiceType;
-  companyId: number;
-  onEdit: (service: ServicePricing) => void;
+
+  onEdit: (service: Service) => void;
   onDelete: (service: ServicePricing) => void;
 }
 
 const ServiceTabContent = ({
   serviceType,
-  companyId,
   onEdit,
   onDelete,
 }: ServiceTabContentProps) => {
-  const { data, loading, error } = useQuery<{
-    servicesByCompanyAndType: Service[];
-  }>(SERVICES_BY_COMPANY_AND_TYPE, {
-    variables: {
-      type: serviceType,
-      companyId,
-    },
-    skip: !companyId,
+  // La compañía sale del contexto (header x-company-id), ya no viaja companyId.
+  const { data, loading, error } = useQuery(SERVICES_QUERY, {
+    variables: { type: serviceType },
   });
 
   if (loading) {
@@ -133,7 +128,7 @@ const ServiceTabContent = ({
     );
   }
 
-  const services = data?.servicesByCompanyAndType || [];
+  const services = (data?.services ?? []).map(mapServiceToLegacy);
 
   if (services.length === 0) {
     return (
@@ -148,13 +143,18 @@ const ServiceTabContent = ({
     );
   }
 
+  const handleCardEdit = (pricing: ServicePricing) => {
+    const original = services.find((s) => s.id === pricing.id);
+    if (original) onEdit(original);
+  };
+
   return (
     <div className="space-y-4">
       {services.map((service) => (
         <ServicePricingCard
           key={service.id}
           service={transformService(service)}
-          onEdit={onEdit}
+          onEdit={handleCardEdit}
           onDelete={onDelete}
         />
       ))}
@@ -169,9 +169,20 @@ const Services = () => {
 
   const createServiceModal = useModal(CreateServiceModal);
 
-  const handleEdit = (service: ServicePricing) => {
-    console.log("Edit service:", service);
-    // TODO: Open edit modal
+  const handleEdit = (service: Service) => {
+    createServiceModal.show({
+      companyId,
+      initialService: service,
+      onSuccess: (updated: Service) => {
+        const tabMap: Record<ServiceType, string> = {
+          HOTEL: "boarding",
+          DAYCARE: "daycare",
+          GROOMING: "grooming",
+          TRAINING: "training",
+        };
+        setActiveTab(tabMap[updated.type]);
+      },
+    });
   };
 
   const handleDelete = (service: ServicePricing) => {
@@ -249,7 +260,6 @@ const Services = () => {
         <TabsContent value="boarding" className="mt-0">
           <ServiceTabContent
             serviceType={TAB_TO_SERVICE_TYPE.boarding}
-            companyId={companyId}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />
@@ -257,7 +267,6 @@ const Services = () => {
         <TabsContent value="daycare" className="mt-0">
           <ServiceTabContent
             serviceType={TAB_TO_SERVICE_TYPE.daycare}
-            companyId={companyId}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />
@@ -265,7 +274,6 @@ const Services = () => {
         <TabsContent value="grooming" className="mt-0">
           <ServiceTabContent
             serviceType={TAB_TO_SERVICE_TYPE.grooming}
-            companyId={companyId}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />
@@ -273,7 +281,6 @@ const Services = () => {
         <TabsContent value="training" className="mt-0">
           <ServiceTabContent
             serviceType={TAB_TO_SERVICE_TYPE.training}
-            companyId={companyId}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />

@@ -1,13 +1,8 @@
 import { useQuery } from "@apollo/client/react";
 import { useMemo } from "react";
-import {
-  RESERVATIONS_BY_COMPANY,
-  RESERVATIONS_BY_SERVICE_TYPE,
-  type ReservationsByCompanyResponse,
-  type ReservationsByCompanyVariables,
-  type ReservationsByServiceTypeResponse,
-  type ReservationsByServiceTypeVariables,
-} from "@/lib/api/reservations.api";
+import { RESERVATIONS_QUERY } from "@/graphql/operations/reservations";
+import { mapReservationToLegacy } from "@/utils/adapters";
+import type { ReservationStatus } from "@/gql/graphql";
 import type { ServiceFilter } from "../constants/guestConstants";
 import { getMainServiceType } from "../utils/guestUtils";
 
@@ -17,98 +12,53 @@ interface FilterConfig {
   dateFilter?: { to: string };
 }
 
+/**
+ * Una sola query contra `reservations(filter)` del schema nuevo.
+ * El filtro por tipo de servicio se aplica en cliente: ReservationFilter
+ * filtra por serviceId/estado/fechas, no por tipo, y una segunda query por
+ * pestaña costaba más que filtrar 30 filas en memoria.
+ */
 export function useGuestData(
-  companyId: number | undefined,
+  _companyId: number | undefined,
   serviceFilter: ServiceFilter,
   filterConfig: FilterConfig,
 ) {
-  const {
-    data: allData,
-    loading: allLoading,
-    error: allError,
-    refetch: refetchAll,
-  } = useQuery<ReservationsByCompanyResponse, ReservationsByCompanyVariables>(
-    RESERVATIONS_BY_COMPANY,
-    {
-      variables: {
-        companyId: Number(companyId),
-        filters: {
-          status: filterConfig.statusFilter,
-          ...filterConfig.dateFilter,
-        },
-      },
-      skip: !companyId || serviceFilter !== "all",
-    },
-  );
-
-  const {
-    data: serviceData,
-    loading: serviceLoading,
-    error: serviceError,
-    refetch: refetchService,
-  } = useQuery<
-    ReservationsByServiceTypeResponse,
-    ReservationsByServiceTypeVariables
-  >(RESERVATIONS_BY_SERVICE_TYPE, {
+  const { data, loading, error, refetch } = useQuery(RESERVATIONS_QUERY, {
     variables: {
-      companyId: Number(companyId),
-      serviceType: filterConfig.serviceType ?? "",
-      filters: {
-        status: filterConfig.statusFilter,
-        ...filterConfig.dateFilter,
+      filter: {
+        status: filterConfig.statusFilter as ReservationStatus,
+        to: filterConfig.dateFilter?.to,
       },
     },
-    skip: !companyId || serviceFilter === "all",
   });
 
-  const {
-    data: countsData,
-    error: countsError,
-    refetch: refetchCounts,
-  } = useQuery<ReservationsByCompanyResponse, ReservationsByCompanyVariables>(
-    RESERVATIONS_BY_COMPANY,
-    {
-      variables: {
-        companyId: Number(companyId),
-        filters: { status: filterConfig.statusFilter },
-      },
-      skip: !companyId,
-    },
+  const allReservations = useMemo(
+    () => (data?.reservations ?? []).map(mapReservationToLegacy),
+    [data?.reservations],
   );
 
-  const loading = serviceFilter === "all" ? allLoading : serviceLoading;
-  const error =
-    serviceFilter === "all" ? allError : serviceError || countsError;
-
   const reservations = useMemo(() => {
-    if (serviceFilter === "all") {
-      return allData?.reservationsByCompany ?? [];
-    }
-    return serviceData?.reservationsByServiceType ?? [];
-  }, [serviceFilter, allData, serviceData]);
-
-  const counts = useMemo(() => {
-    const allReservations = countsData?.reservationsByCompany ?? [];
-    return allReservations.reduce(
-      (acc, r) => {
-        acc.all++;
-        const serviceType = getMainServiceType(r);
-        if (serviceType === "HOTEL") acc.stays++;
-        else if (serviceType === "DAYCARE") acc.daycare++;
-        return acc;
-      },
-      { all: 0, stays: 0, daycare: 0 },
+    if (serviceFilter === "all") return allReservations;
+    return allReservations.filter(
+      (reservation) =>
+        getMainServiceType(reservation) === filterConfig.serviceType,
     );
-  }, [countsData]);
+  }, [allReservations, serviceFilter, filterConfig.serviceType]);
 
-  const refetch = () => {
-    refetchCounts();
-    if (serviceFilter === "all") {
-      refetchAll();
-    } else {
-      refetchService();
-    }
-  };
+  const counts = useMemo(
+    () =>
+      allReservations.reduce(
+        (acc, reservation) => {
+          acc.all++;
+          const serviceType = getMainServiceType(reservation);
+          if (serviceType === "HOTEL") acc.stays++;
+          else if (serviceType === "DAYCARE") acc.daycare++;
+          return acc;
+        },
+        { all: 0, stays: 0, daycare: 0 },
+      ),
+    [allReservations],
+  );
 
   return { reservations, loading, error, counts, refetch };
 }

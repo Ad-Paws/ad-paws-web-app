@@ -1,0 +1,13 @@
+{
+  "projectId": "5344be42-3e2a-4bd0-8580-be2032e77850",
+  "pkg": "adpaws-ui",
+  "globalName": "AdPawsUI",
+  "shape": "package",
+  "srcDir": "src/components/ui",
+  "tsconfig": "tsconfig.app.json",
+  "cssEntry": ".design-sync/compiled/app.css",
+  "runtimeFontPrefixes": ["sofia-pro", "bookmania"],
+  "overrides": {
+    "Dialog": { "cardMode": "single", "viewport": "480x320" }
+  }
+}

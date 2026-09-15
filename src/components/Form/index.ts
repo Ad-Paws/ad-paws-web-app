@@ -12,3 +12,4 @@ export { FormCheckbox } from "./FormCheckbox"
 export { FormServiceTypeCard, type FormServiceTypeCardProps, type ServiceTypeVariant } from "./FormServiceTypeCard"
 export { FormAdditionalServiceItem, type FormAdditionalServiceItemProps, type ServiceItemVariant } from "./FormAdditionalServiceItem"
 
+export { PasswordStrengthMeter } from "./PasswordStrengthMeter"

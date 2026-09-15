@@ -4,10 +4,16 @@ import {
   CHECK_IN_RESERVATION_MUTATION,
   CHECK_OUT_RESERVATION_MUTATION,
   MARK_RESERVATION_PAID_MUTATION,
-  RESERVATIONS_QUERY,
 } from "@/graphql/operations/reservations";
-import { REVENUE_STATS_QUERY } from "@/graphql/operations/stats";
-import type { ReservationFull } from "@/lib/api/reservations.api";
+import {
+  DASHBOARD_AGENDA_QUERY,
+  OVERDUE_ARRIVALS_QUERY,
+  PENDING_PAYMENTS_QUERY,
+} from "@/graphql/operations/dashboard";
+import {
+  GUEST_STATS_QUERY,
+  REVENUE_STATS_QUERY,
+} from "@/graphql/operations/stats";
 import { evictReservationCache } from "@/graphql/cache";
 import { showToast } from "@/lib/toast";
 
@@ -25,9 +31,15 @@ import { showToast } from "@/lib/toast";
  * anticipación nace PENDING y necesita que alguien la reciba: sin esta acción
  * se quedaba así para siempre.
  */
+/** Lo mínimo que una acción necesita de la reservación. */
+export interface ReservationActionTarget {
+  id: string | number;
+  dog?: { name?: string | null } | null;
+}
+
 export function useGuestActions() {
   const [updatingReservationId, setUpdatingReservationId] = useState<
-    number | null
+    string | null
   >(null);
   const [error, setError] = useState<Error | null>(null);
 
@@ -38,7 +50,13 @@ export function useGuestActions() {
    * anuncie sobre una pantalla que todavía muestra el estado anterior.
    */
   const mutationOptions = {
-    refetchQueries: [RESERVATIONS_QUERY, REVENUE_STATS_QUERY],
+    refetchQueries: [
+      DASHBOARD_AGENDA_QUERY,
+      OVERDUE_ARRIVALS_QUERY,
+      GUEST_STATS_QUERY,
+      REVENUE_STATS_QUERY,
+      PENDING_PAYMENTS_QUERY,
+    ],
     awaitRefetchQueries: true,
     update: evictReservationCache,
   };
@@ -57,7 +75,7 @@ export function useGuestActions() {
   );
 
   const runAction = async (
-    reservationId: number,
+    reservationId: string,
     action: () => Promise<unknown>,
     success: { title: string; description: string },
   ) => {
@@ -76,9 +94,9 @@ export function useGuestActions() {
     }
   };
 
-  const handleCheckIn = (reservation: ReservationFull) =>
+  const handleCheckIn = (reservation: ReservationActionTarget) =>
     runAction(
-      reservation.id,
+      String(reservation.id),
       () => checkInReservation({ variables: { id: String(reservation.id) } }),
       {
         title: "Check-in exitoso",
@@ -86,9 +104,9 @@ export function useGuestActions() {
       },
     );
 
-  const handleCheckout = (reservation: ReservationFull) =>
+  const handleCheckout = (reservation: ReservationActionTarget) =>
     runAction(
-      reservation.id,
+      String(reservation.id),
       () => checkOutReservation({ variables: { id: String(reservation.id) } }),
       {
         title: "Check-out exitoso",
@@ -96,9 +114,9 @@ export function useGuestActions() {
       },
     );
 
-  const handleCollectPayment = (reservation: ReservationFull) =>
+  const handleCollectPayment = (reservation: ReservationActionTarget) =>
     runAction(
-      reservation.id,
+      String(reservation.id),
       () =>
         markReservationPaid({
           variables: { id: String(reservation.id), method: "TERMINAL" },
@@ -109,7 +127,7 @@ export function useGuestActions() {
       },
     );
 
-  const handleCheckoutAndCollect = async (reservation: ReservationFull) => {
+  const handleCheckoutAndCollect = async (reservation: ReservationActionTarget) => {
     await handleCheckout(reservation);
     await handleCollectPayment(reservation);
   };

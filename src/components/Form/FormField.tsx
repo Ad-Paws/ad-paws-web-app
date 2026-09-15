@@ -22,23 +22,30 @@ const FormFieldContext = React.createContext<FormFieldContextValue>(
   {} as FormFieldContextValue
 );
 
+/**
+ * Id compartido por todo lo que vive dentro de un `FormItem` (label, control,
+ * descripción, mensaje). Sin esto cada componente generaba su propio
+ * `useId()` y `htmlFor` / `aria-describedby` apuntaban a ids inexistentes.
+ */
+const FormItemContext = React.createContext<{ id: string } | null>(null);
+
 export const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext);
+  const itemContext = React.useContext(FormItemContext);
   const formContext = useFormContext();
+  const fallbackId = React.useId();
+
+  if (!fieldContext) {
+    throw new Error("useFormField should be used within <FormField>");
+  }
 
   const fieldState = formContext.getFieldState(
     fieldContext.name,
     formContext.formState
   );
 
-  if (!fieldContext) {
-    throw new Error("useFormField should be used within <FormField>");
-  }
-
-  const { id } = React.useId
-    ? // eslint-disable-next-line react-hooks/rules-of-hooks
-      { id: React.useId() }
-    : { id: fieldContext.name };
+  // Fuera de un FormItem (uso suelto) se conserva el comportamiento anterior.
+  const id = itemContext?.id ?? fallbackId;
 
   return {
     id,
@@ -69,15 +76,18 @@ export const FormItem = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => {
+  const id = React.useId();
   const { invalid } = useFormField();
 
   return (
-    <Field
-      ref={ref}
-      data-invalid={invalid}
-      className={cn(className)}
-      {...props}
-    />
+    <FormItemContext.Provider value={{ id }}>
+      <Field
+        ref={ref}
+        data-invalid={invalid}
+        className={cn(className)}
+        {...props}
+      />
+    </FormItemContext.Provider>
   );
 });
 FormItem.displayName = "FormItem";

@@ -78,7 +78,9 @@
   --badge-success: #dce8dc;
   --badge-success-foreground: #4f744f;
   --badge-warning: #f8e8ce;
-  --badge-warning-foreground: #95692a;
+  /* Era #95692a: 4.49:1 sobre la tarjeta del registro (#f5f7f2), justo bajo
+     AA, y lo usa el semáforo de contraseña como texto de 12px. */
+  --badge-warning-foreground: #8a6126;
   --badge-danger: #fbe3e3;
   --badge-danger-foreground: #9c5555;
 
@@ -213,14 +215,19 @@
   --sidebar-ring: #80af80;
 }
 
-/* Enlaces básicos */
-a {
-  font-weight: 500;
-  color: #4c2d22;
-  text-decoration: none;
-}
-a:hover {
-  color: #80af80;
+/* Enlaces básicos
+   Dentro de @layer base para que las utilidades de Tailwind (text-*,
+   underline, font-*) puedan sobrescribirlos: un estilo sin layer gana a
+   cualquier utilidad. Usan tokens para respetar el tema claro/oscuro. */
+@layer base {
+  a {
+    font-weight: 500;
+    color: var(--secondary);
+    text-decoration: none;
+  }
+  a:hover {
+    color: var(--primary);
+  }
 }
 
 /* Reseteo mínimo de body, el color ya lo maneja @layer base */

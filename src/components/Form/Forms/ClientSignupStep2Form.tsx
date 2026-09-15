@@ -170,7 +170,7 @@ const ClientSignupStep2Form = ({
       <Form
         form={form}
         onSubmit={handleAddDog}
-        className="flex flex-col gap-6 w-full rounded-md bg-white p-4"
+        className="flex flex-col gap-6 w-full rounded-md bg-card dark:bg-muted p-4"
       >
         <FieldSet className="gap-5">
           {/* Photo upload */}

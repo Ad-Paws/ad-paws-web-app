@@ -215,6 +215,11 @@ input CreateReservationInput {
   addOnServiceIds: [ID!]
   dogId: ID!
   notes: String
+  """
+  Accepts an arrival outside opening hours. Staff only; recorded on the
+  reservation's event log. Late COLLECTION is never refused — it is a charge.
+  """
+  overrideBusinessHours: Boolean
   scheduledCheckIn: DateTime!
 
   """Required for HOTEL: a stay must contain at least one night."""

@@ -18,7 +18,7 @@ const SignupSuccessScreen = ({ onGoHome }: SignupSuccessScreenProps) => {
   };
 
   return (
-    <div className="min-h-dvh w-full bg-[#f5f7f2] flex flex-col">
+    <div className="min-h-dvh w-full bg-[#f5f7f2] dark:bg-card flex flex-col">
       {/* Main content centered */}
       <main className="flex-1 flex flex-col items-center justify-center px-6 pb-8">
         {/* Success Icon */}

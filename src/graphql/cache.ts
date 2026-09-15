@@ -23,6 +23,8 @@ export function evictReservationCache(cache: ApolloCache): void {
     "reservationsOn",
     "guestStats",
     "revenueStats",
+    // Cobrar o hacer checkout cambia lo que cada perro debe.
+    "pendingPayments",
     // La ocupación cambia con cada alta o cancelación; si no se invalida, el
     // calendario de disponibilidad miente sobre los lugares libres.
     "occupancy",

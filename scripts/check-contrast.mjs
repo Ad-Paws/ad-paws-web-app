@@ -66,6 +66,10 @@ const PAIRS = [
   ["badge-success-foreground", "badge-success", AA_LARGE, "badge de éxito"],
   ["badge-warning-foreground", "badge-warning", AA_LARGE, "badge de aviso"],
   ["badge-danger-foreground", "badge-danger", AA_LARGE, "badge de peligro"],
+  // Semáforo de contraseña (PasswordStrengthMeter): texto de 12px en tarjeta.
+  ["badge-danger-foreground", "card", AA_NORMAL, "semáforo: débil"],
+  ["badge-warning-foreground", "card", AA_NORMAL, "semáforo: media"],
+  ["badge-success-foreground", "card", AA_NORMAL, "semáforo: segura / requisito cumplido"],
 ];
 
 let failures = 0;

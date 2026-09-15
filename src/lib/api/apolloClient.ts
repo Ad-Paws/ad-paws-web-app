@@ -7,7 +7,10 @@ import UploadHttpLink from "apollo-upload-client/UploadHttpLink.mjs";
 import { clearSession } from "@/lib/auth";
 import { useCompanyStore } from "@/store/useCompanyStore";
 
-const LOGIN_PATH = "/login";
+const LOGIN_PATH = "/auth/login";
+
+/** Rutas públicas: un UNAUTHENTICATED aquí es esperado y no debe redirigir. */
+const PUBLIC_PATHS = [LOGIN_PATH, "/registro-cliente", "/registro-empresa"];
 
 /**
  * Adjunta la compañía activa como `x-company-id`. El backend resuelve el
@@ -28,10 +31,13 @@ const companyLink = new SetContextLink((prevContext) => {
 /**
  * Manejo global de sesión expirada. El backend responde con
  * `extensions.code === "UNAUTHENTICATED"` cuando la sesión no es válida:
- * se limpia el estado local y se redirige a login (salvo que ya estemos ahí,
- * para no ciclar en operaciones públicas como signUser).
+ * se limpia el estado local y se redirige a login, salvo que:
+ * - estemos en una ruta pública (login/registro), para no ciclar en
+ *   operaciones públicas como signUser;
+ * - la operación pida `context: { skipAuthRedirect: true }` (p. ej. la
+ *   consulta `me` de arranque, cuyo resultado maneja ProtectedRoute).
  */
-const errorLink = new ErrorLink(({ error }) => {
+const errorLink = new ErrorLink(({ error, operation }) => {
   if (!CombinedGraphQLErrors.is(error)) return;
 
   const unauthenticated = error.errors.some(
@@ -40,7 +46,11 @@ const errorLink = new ErrorLink(({ error }) => {
   if (!unauthenticated) return;
 
   clearSession();
-  if (!window.location.pathname.startsWith(LOGIN_PATH)) {
+  if (operation.getContext().skipAuthRedirect) return;
+
+  const { pathname } = window.location;
+  const onPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
+  if (!onPublicPath) {
     window.location.assign(LOGIN_PATH);
   }
 });

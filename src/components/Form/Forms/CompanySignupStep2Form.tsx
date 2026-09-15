@@ -4,9 +4,14 @@ import { FormField, FormItem } from "../FormField";
 import { FormLabel } from "../FormLabel";
 import { FormControl } from "../FormControl";
 import { FormMessage } from "../FormMessage";
+import { PasswordStrengthMeter } from "../PasswordStrengthMeter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
+import {
+  PASSWORD_MIN_LENGTH,
+  passwordFieldRules,
+} from "@/lib/passwordPolicy";
 
 export interface CompanySignupStep2Values {
   ownerName: string;
@@ -80,24 +85,21 @@ const CompanySignupStep2Form = ({
 
         <FormField
           name="ownerPassword"
-          rules={{
-            required: "La contraseña es requerida",
-            minLength: {
-              value: 8,
-              message: "La contraseña debe tener al menos 8 caracteres",
-            },
-          }}
-          render={({ field }) => (
+          rules={passwordFieldRules}
+          render={({ field, fieldState }) => (
             <FormItem>
               <FormLabel>Contraseña</FormLabel>
               <FormControl>
                 <Input
                   type="password"
-                  placeholder="Mínimo 8 caracteres"
+                  autoComplete="new-password"
+                  placeholder={`Mínimo ${PASSWORD_MIN_LENGTH} caracteres`}
                   {...field}
                 />
               </FormControl>
-              <FormMessage />
+              <PasswordStrengthMeter password={field.value ?? ""} />
+              {/* El semáforo ya explica qué falta; solo se muestra el error de vacío. */}
+              {fieldState.error?.type === "required" && <FormMessage />}
             </FormItem>
           )}
         />

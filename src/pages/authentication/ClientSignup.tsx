@@ -181,7 +181,7 @@ const ClientSignup = () => {
         )}
       </div>
       <div className="h-dvh flex flex-row items-center justify-center items-center lg:p-6">
-        <div className="h-dvh max-h-none lg:max-h-[calc(100dvh-4rem)] md:rounded-md md:shadow-lg w-full bg-[#f5f7f2] flex flex-col lg:max-w-4/5 xl:max-w-3/5">
+        <div className="h-dvh max-h-none lg:max-h-[calc(100dvh-4rem)] md:rounded-md md:shadow-lg w-full bg-[#f5f7f2] dark:bg-card flex flex-col lg:max-w-4/5 xl:max-w-3/5">
           {/* Header with back button and step indicator */}
           <header className="flex items-center justify-between px-4 py-4">
             {currentStep > 1 ? (

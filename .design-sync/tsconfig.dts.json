@@ -1,0 +1,17 @@
+{
+  "extends": "../tsconfig.app.json",
+  "compilerOptions": {
+    "baseUrl": "..",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "declarationMap": false,
+    "outDir": "../dist/types",
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "include": ["../src/components/ui/**/*.tsx"]
+}

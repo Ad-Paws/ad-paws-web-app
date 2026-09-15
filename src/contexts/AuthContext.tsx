@@ -60,6 +60,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const { data } = await apolloClient.query({
         query: ME_QUERY,
         fetchPolicy: "network-only",
+        // Sin sesión es un estado válido: ProtectedRoute decide a dónde ir
+        // (y conserva la ruta de origen), no el errorLink global.
+        context: { skipAuthRedirect: true },
       });
 
       if (!data?.me) {
